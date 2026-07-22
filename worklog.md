@@ -86,13 +86,21 @@ NodeByte Connect 是一个基于 Discourse Connect 的统一身份认证 (SSO) �
 
 1. **Discourse API 未配置真实凭据** - 站内信发送在开发模式下降级返回验证码；生产需配置真实 DISCOURSE_API_KEY/USERNAME
 2. **Cron 定时任务** - 需要外部 cron 调用 `/api/cron/check-banned?key=xxx` 每 5 分钟一次
-3. **GitHub 推送** - 待创建 nbconnect 仓库并推送源码 + standalone 包
-4. **Standalone 打包** - 需配置 next.config.ts 的 output: "standalone"
-5. **JWKS** - 当前使用 HS256 对称签名，JWKS 返回空 keys 集；如需 RS256 非对称签名需额外实现 RSA 密钥对
+3. ~~GitHub 推送~~ ✅ 已完成: 仓库 cshdotcom/nbconnect 已创建，源码已推送，Tag v1.0.0 已打，Standalone 包已上传 Release
+4. ~~Standalone 打包~~ ✅ 已完成: next.config.ts 已配置 output: "standalone"，构建成功 (53MB tarball)
+5. ~~15 分钟 web dev review cron~~ ✅ 已创建 (job_id: 286497)
+6. **JWKS** - 当前使用 HS256 对称签名，JWKS 返回空 keys 集；如需 RS256 非对称签名需额外实现 RSA 密钥对
+7. **Lint** - ✅ 已全部通过
+
+## GitHub 发布信息
+- 仓库: https://github.com/cshdotcom/nbconnect
+- Tag: v1.0.0
+- Release: https://github.com/cshdotcom/nbconnect/releases/tag/v1.0.0
+- Standalone 下载: https://github.com/cshdotcom/nbconnect/releases/download/v1.0.0/nbconnect-standalone-v1.0.0.tar.gz
 
 ## 下一阶段优先事项
-1. 配置 next.config.ts standalone 输出
-2. 创建 start.sh 启动脚本
-3. GitHub 仓库创建 + 源码推送 + Tag + Release
-4. 设置 15 分钟 web dev review cron
-5. 持续 UI/UX 细节打磨
+1. 持续 UI/UX 细节打磨（由 15 分钟 cron 自动推进）
+2. 配置真实 Discourse 凭据后端到端测试
+3. 可选: RS256 非对称签名 + RSA JWKS
+4. 可选: PKCE 支持
+5. 可选: 更丰富的权限范围 (trust_level 自定义 scope)

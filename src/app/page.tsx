@@ -17,7 +17,6 @@ function HomeInner() {
   const sp = useSearchParams();
   const { user, loading, refreshSession } = useAppStore();
   const [booted, setBooted] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
 
   const view = sp.get("view");
   const isAdminRoute = sp.get("admin") === "1";
@@ -35,7 +34,6 @@ function HomeInner() {
       // Production: auto-redirect to Discourse login
       const returnUrl = window.location.pathname + window.location.search;
       window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnUrl)}`;
-      setRedirecting(true);
     }
   }, [booted, loading, user]);
 

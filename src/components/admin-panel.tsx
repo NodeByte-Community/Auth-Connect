@@ -29,21 +29,20 @@ export function AdminPanel() {
 
   // Red dot: fetch pending review count
   const [pendingCount, setPendingCount] = useState(0);
-  const refreshPending = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/reviews?status=pending&pageSize=1");
-      const data = await res.json();
-      setPendingCount(data.pendingCount || 0);
-    } catch {}
-  }, []);
+  const [pendingRefreshKey, setPendingRefreshKey] = useState(0);
 
   useEffect(() => {
-    let i: ReturnType<typeof setInterval>;
-    const run = () => { refreshPending(); };
-    run();
-    i = setInterval(run, 30000);
-    return () => clearInterval(i);
-  }, [refreshPending]);
+    let active = true;
+    const doFetch = () => {
+      fetch("/api/admin/reviews?status=pending&pageSize=1")
+        .then((r) => r.json())
+        .then((data) => { if (active) setPendingCount(data.pendingCount || 0); })
+        .catch(() => {});
+    };
+    const t = setTimeout(doFetch, 0);
+    const i = setInterval(doFetch, 30000);
+    return () => { active = false; clearTimeout(t); clearInterval(i); };
+  }, [pendingRefreshKey]);
 
   if (!user || !user.isAdmin) {
     return (
@@ -90,7 +89,7 @@ export function AdminPanel() {
           </TabsList>
 
           <TabsContent value="apps"><AppsTab /></TabsContent>
-          <TabsContent value="reviews"><ReviewsTab onChanged={refreshPending} /></TabsContent>
+          <TabsContent value="reviews"><ReviewsTab onChanged={() => setPendingRefreshKey((k) => k + 1)} /></TabsContent>
           <TabsContent value="users"><UsersTab /></TabsContent>
           <TabsContent value="logs"><LogsTab /></TabsContent>
           <TabsContent value="settings"><SettingsTab /></TabsContent>
