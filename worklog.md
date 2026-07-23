@@ -296,3 +296,57 @@ NodeByte Connect 是一个基于 Discourse Connect 的统一身份认证 (SSO) �
 3. Webhook 事件通知
 4. 暗黑模式支持
 5. 国际化 (i18n)
+
+---
+
+## 第五轮迭代 (2025-01-23) — 审核流程端到端验证与修复
+
+### 项目当前状态描述
+用户要求检查自动审核并修复。发现数据库被清空（可能由之前的db:push导致），重新创建测试数据后完整验证了审核流程，发现并修复了应用详情对话框的日期格式问题。
+
+### 当前目标 / 已完成的修改 / 验证结果
+
+#### 测试数据重建
+数据库被清空，重新创建：
+- admin_demo (管理员, Trust Level 4)
+- user_demo (普通用户, Trust Level 2)
+- 5个测试应用（3个pending + 1个approved + 后续2个pending用于批量测试）
+
+#### 审核流程端到端验证（全部通过）
+1. **单个通过** ✅ — 应用状态+审核记录更新为approved，reviewerId/reviewedAt正确记录
+2. **单个拒绝** ✅ — 拒绝理由保存到 application.rejectReason 和 appReview.reason
+3. **批量通过** ✅ — 多个应用一次性通过
+4. **批量拒绝** ✅ — 带理由批量拒绝，理由正确保存到每个应用
+5. **编辑后重新审核** ✅ — 应用状态变为 pending_re_review，创建新审核记录，旧记录保留
+6. **用户端拒绝展示** ✅ — 显示拒绝理由 + "请修改后重新提交审核" + "修改应用"按钮
+7. **状态筛选** ✅ — 待审核/已通过/已拒绝 三种筛选正常
+8. **红点提醒** ✅ — 待审核数量实时更新（3→1→0→3→0）
+9. **日期格式** ✅ — 审核列表和应用详情均为 ISO 8601 (YYYY-MM-DD HH:mm:ss)
+
+#### Bug 修复
+- **app-detail-dialog 日期格式** — `toLocaleString("zh-CN")` → `fmtDate()` (ISO 8601)
+  - 修复前：创建时间显示 "2026/7/23 03:30:40"
+  - 修复后：创建时间显示 "2026-07-23 03:30:40"
+  - 添加 fmtDate helper 函数到组件
+
+#### 验证结果
+- ✅ Lint 全部通过
+- ✅ 单个通过：DB 验证 status=approved, reviewerId/reviewedAt 正确
+- ✅ 单个拒绝：DB 验证 status=rejected, rejectReason 正确
+- ✅ 批量通过：pending 列表清空
+- ✅ 批量拒绝：3个应用同时拒绝，理由一致
+- ✅ 编辑重审：status=pending_re_review, 新审核记录创建
+- ✅ 用户端：拒绝理由显示，修改按钮可用
+- ✅ 日期格式：ISO 8601 统一
+- ✅ 代码已推送 GitHub (commit 93380a7)
+
+### 未解决问题或风险
+1. 数据库可能因 db:push --accept-data-loss 被清空，生产环境应使用 migrate 而非 push
+2. 审核通知（Discourse PM）因未配置真实 API 凭据未能端到端测试
+
+### 建议下一阶段优先事项
+1. 配置真实 Discourse 凭据测试站内信通知
+2. 添加审核记录导出功能
+3. 审核超时自动提醒
+4. PKCE 支持
+5. 暗黑模式
