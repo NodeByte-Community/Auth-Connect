@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { destroySession, getSession, getSessionCookieName } from "@/lib/auth";
 import { logAction } from "@/lib/logs";
+import { getBaseUrl } from "@/lib/url";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +12,14 @@ export async function POST(req: NextRequest) {
   }
   await destroySession();
   const res = NextResponse.json({ ok: true });
-  res.cookies.delete(getSessionCookieName());
+  res.cookies.set(getSessionCookieName(), "", { httpOnly: true, path: "/", maxAge: 0 });
   return res;
 }
 
 export async function GET(req: NextRequest) {
   await destroySession();
-  const res = NextResponse.redirect(new URL("/", req.nextUrl.origin));
-  res.cookies.delete(getSessionCookieName());
+  const baseUrl = getBaseUrl(req);
+  const res = NextResponse.redirect(new URL("/", baseUrl));
+  res.cookies.set(getSessionCookieName(), "", { httpOnly: true, path: "/", maxAge: 0 });
   return res;
 }

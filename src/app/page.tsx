@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { ConnectDashboard } from "@/components/connect-dashboard";
 import { ConsentScreen } from "@/components/consent-screen";
@@ -11,34 +11,42 @@ import { Card } from "@/components/ui/card";
 import { Loader2, LogIn, ShieldCheck, ArrowRight } from "lucide-react";
 
 function HomeInner() {
-  const router = useRouter();
   const sp = useSearchParams();
   const { user, loading, refreshSession } = useAppStore();
   const [booted, setBooted] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [error, setError] = useState(false);
 
   const view = sp.get("view");
   const isAdminRoute = sp.get("admin") === "1";
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
-      await refreshSession();
-      setBooted(true);
+      try {
+        await refreshSession();
+      } catch (e) {
+        console.error("Session refresh failed:", e);
+        if (mounted) setError(true);
+      } finally {
+        if (mounted) setBooted(true);
+      }
     })();
+    return () => { mounted = false; };
   }, [refreshSession]);
 
-  const handleLogin = () => {
-    const returnUrl = window.location.pathname + window.location.search;
-    setRedirecting(true);
-    window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnUrl)}`;
-  };
-
+  // Loading state
   if (!booted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
       </div>
     );
+  }
+
+  // Error state - show login page instead of infinite loop
+  if (error) {
+    return <LoginPage onLogin={() => window.location.reload()} redirecting={false} />;
   }
 
   // Not logged in: show branded login page with single login button
@@ -55,11 +63,17 @@ function HomeInner() {
     if (user.isAdmin) {
       return <AdminPanel />;
     }
-    // Non-admin trying to access admin route: redirect to dashboard
     return <ConnectDashboard />;
   }
 
   return <ConnectDashboard />;
+
+  function handleLogin() {
+    if (redirecting) return; // Guard against double-click
+    setRedirecting(true);
+    const returnUrl = window.location.pathname + window.location.search;
+    window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnUrl)}`;
+  }
 }
 
 function LoginPage({ onLogin, redirecting }: { onLogin: () => void; redirecting: boolean }) {

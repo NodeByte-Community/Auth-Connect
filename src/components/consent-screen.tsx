@@ -97,11 +97,7 @@ export function ConsentScreen() {
         <Card className="max-w-md w-full p-6 shadow-xl">
           <div className="text-center mb-5">
             <div className="w-16 h-16 rounded-2xl bg-white border mx-auto flex items-center justify-center overflow-hidden shadow-sm">
-              {app.siteLogo || app.icon ? (
-                <img src={app.siteLogo || app.icon} alt="" className="w-full h-full object-contain" />
-              ) : (
-                <ImageIcon className="w-7 h-7 text-slate-300" />
-              )}
+              <ConsentLogo siteLogo={app.siteLogo} icon={app.icon} redirectUri={redirect_uri} />
             </div>
             <h1 className="text-lg font-bold mt-3 text-slate-800">{app.name}</h1>
             <p className="text-xs text-slate-500 mt-1">请求访问您的 NodeByte Connect 账户</p>
@@ -157,5 +153,43 @@ export function ConsentScreen() {
         NodeByte Connect · 安全授权
       </footer>
     </div>
+  );
+}
+
+function ConsentLogo({ siteLogo, icon, redirectUri }: { siteLogo?: string | null; icon?: string | null; redirectUri: string }) {
+  const [imgError, setImgError] = useState(false);
+  const [triedFavicon, setTriedFavicon] = useState(false);
+
+  // Priority: siteLogo > icon > favicon from redirectUri > placeholder
+  let src = siteLogo || icon;
+  if (!src || imgError) {
+    if (!triedFavicon) {
+      try {
+        const domain = new URL(redirectUri).hostname;
+        src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+      } catch {
+        src = undefined;
+      }
+    }
+  }
+
+  if (!src) {
+    return <ImageIcon className="w-7 h-7 text-slate-300" />;
+  }
+
+  return (
+    <img
+      src={src}
+      alt=""
+      className="w-full h-full object-contain"
+      onError={() => {
+        if (!triedFavicon && (siteLogo || icon)) {
+          setImgError(true);
+          setTriedFavicon(true);
+        } else {
+          setTriedFavicon(true);
+        }
+      }}
+    />
   );
 }

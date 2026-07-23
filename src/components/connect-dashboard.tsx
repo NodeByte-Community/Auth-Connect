@@ -191,13 +191,34 @@ function AppCard({ app, onClick }: { app: AppItem; onClick: () => void }) {
     toast.success("APP ID 已复制");
   };
 
+  // Auto-detect favicon from first callback URL if no icon set
+  const [imgError, setImgError] = useState(false);
+  const iconUrl = app.icon && !imgError
+    ? app.icon
+    : (() => {
+        try {
+          const firstCallback = app.callbackUrls.split("\n")[0].trim();
+          if (firstCallback) return `https://www.google.com/s2/favicons?domain=${new URL(firstCallback).hostname}&sz=64`;
+        } catch {}
+        return null;
+      })();
+
   return (
     <Card className={`p-4 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden border-l-0`} onClick={onClick}>
       {/* Left accent bar */}
       <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${st.accent}`} />
       <div className="flex items-start gap-3 pl-2">
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border flex items-center justify-center overflow-hidden shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-          {app.icon ? <img src={app.icon} alt="" className="w-full h-full object-contain" /> : <ExternalLink className="w-5 h-5 text-slate-400" />}
+          {iconUrl ? (
+            <img
+              src={iconUrl}
+              alt=""
+              className="w-full h-full object-contain"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <ExternalLink className="w-5 h-5 text-slate-400" />
+          )}
         </div>
         <div className="min-w-0 flex-1 overflow-hidden">
           <div className="flex items-center gap-2 flex-wrap">

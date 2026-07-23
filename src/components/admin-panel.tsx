@@ -634,7 +634,7 @@ function AppsTab() {
         </div>
       )}
 
-      <ScrollArea className="h-[60vh] rounded-lg border overflow-x-auto">
+      <div className="h-[60vh] rounded-lg border overflow-auto">
         <table className="w-full text-sm min-w-[640px]">
           <thead className="sticky top-0 bg-slate-50 border-b">
             <tr>
@@ -675,7 +675,7 @@ function AppsTab() {
             ))}
           </tbody>
         </table>
-      </ScrollArea>
+      </div>
 
       <div className="flex items-center justify-between mt-3 text-sm text-slate-500">
         <span>共 {total} 条</span>
@@ -794,7 +794,7 @@ function ReviewsTab({ onChanged }: { onChanged: () => void }) {
         </div>
       )}
 
-      <ScrollArea className="h-[60vh] rounded-lg border overflow-x-auto">
+      <div className="h-[60vh] rounded-lg border overflow-auto">
         <table className="w-full text-sm min-w-[640px]">
           <thead className="sticky top-0 bg-slate-50 border-b">
             <tr>
@@ -842,7 +842,7 @@ function ReviewsTab({ onChanged }: { onChanged: () => void }) {
             ))}
           </tbody>
         </table>
-      </ScrollArea>
+      </div>
 
       <div className="flex items-center justify-between mt-3 text-sm text-slate-500">
         <span>共 {total} 条</span>
@@ -996,7 +996,7 @@ function UsersTab() {
         </div>
       )}
 
-      <ScrollArea className="h-[60vh] rounded-lg border overflow-x-auto">
+      <div className="h-[60vh] rounded-lg border overflow-auto">
         <table className="w-full text-sm min-w-[640px]">
           <thead className="sticky top-0 bg-slate-50 border-b">
             <tr>
@@ -1047,7 +1047,7 @@ function UsersTab() {
             ))}
           </tbody>
         </table>
-      </ScrollArea>
+      </div>
 
       <div className="flex items-center justify-between mt-3 text-sm text-slate-500">
         <span>共 {total} 条</span>
@@ -1254,7 +1254,7 @@ function LogsTab() {
         <Button variant="outline" size="sm" className="text-rose-600" onClick={clearLogs}><Eraser className="w-4 h-4 mr-1" />清空</Button>
       </div>
 
-      <ScrollArea className="h-[60vh] rounded-lg border overflow-x-auto">
+      <div className="h-[60vh] rounded-lg border overflow-auto">
         <table className="w-full text-sm min-w-[640px]">
           <thead className="sticky top-0 bg-slate-50 border-b">
             <tr>
@@ -1279,7 +1279,7 @@ function LogsTab() {
             ))}
           </tbody>
         </table>
-      </ScrollArea>
+      </div>
 
       <div className="flex items-center justify-between mt-3 text-sm text-slate-500">
         <span>共 {total} 条</span>

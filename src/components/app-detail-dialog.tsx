@@ -321,23 +321,41 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
                 </div>
                 <p className="text-sm text-teal-700">系统将通过 NodeByte 站内信向 <b>{app.name}</b> 的所有者发送一个 5 分钟有效验证码。</p>
                 <p className="text-xs text-teal-600 mt-1">请前往 NodeByte 社区 → 个人消息 查看。</p>
-                {!codeSent ? (
-                  <Button className="mt-3" onClick={sendCode} disabled={verifyLoading}>
-                    {verifyLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
-                    发送验证码到站内信
-                  </Button>
-                ) : (
-                  <div className="mt-3 space-y-2">
+
+                <Button className="mt-3" onClick={sendCode} disabled={verifyLoading}>
+                  {verifyLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                  {codeSent ? "重新发送验证码" : "发送验证码到站内信"}
+                </Button>
+
+                {codeSent && (
+                  <div className="mt-4 space-y-2">
                     <Label>输入验证码</Label>
-                    <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="6位验证码" className="text-lg tracking-widest font-mono" maxLength={6} />
+                    <Input
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="6位验证码"
+                      className="text-2xl tracking-[0.5em] font-mono text-center h-14"
+                      maxLength={6}
+                      inputMode="numeric"
+                      autoFocus
+                    />
                     <div className="flex gap-2">
-                      <Button onClick={verifyCode} disabled={verifyLoading || code.length !== 6}>
+                      <Button
+                        onClick={verifyCode}
+                        disabled={verifyLoading || code.length !== 6}
+                        className="flex-1 h-11"
+                      >
                         {verifyLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
-                        验证
+                        验证并查看凭据
                       </Button>
-                      <Button variant="outline" onClick={sendCode} disabled={verifyLoading}><RefreshCw className="w-4 h-4 mr-1" />重新发送</Button>
                     </div>
                   </div>
+                )}
+
+                {codeSent && (
+                  <p className="text-xs text-slate-400 mt-2">
+                    验证码已发送至您的 NodeByte 社区站内信，5 分钟内有效。
+                  </p>
                 )}
               </div>
             </div>

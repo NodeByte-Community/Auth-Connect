@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { generateAuthCode } from "@/lib/sso";
 import { logAction } from "@/lib/logs";
+import { getBaseUrl } from "@/lib/url";
 
 export const dynamic = "force-dynamic";
 
@@ -52,14 +53,15 @@ export async function GET(req: NextRequest) {
   // Check login
   const session = await getSession();
   if (!session) {
-    const loginUrl = new URL("/api/auth/login", req.nextUrl.origin);
+    const baseUrl = getBaseUrl(req);
+    const loginUrl = new URL("/api/auth/login", baseUrl);
     loginUrl.searchParams.set("return_to", req.nextUrl.pathname + req.nextUrl.search);
     return NextResponse.redirect(loginUrl);
   }
 
   // Logged in -> show consent (frontend at / handles view=authorize)
-  // Use request origin so redirects work in both dev (localhost) and prod
-  const consentUrl = new URL("/", req.nextUrl.origin);
+  const baseUrl = getBaseUrl(req);
+  const consentUrl = new URL("/", baseUrl);
   consentUrl.searchParams.set("view", "authorize");
   consentUrl.searchParams.set("client_id", client_id);
   consentUrl.searchParams.set("redirect_uri", redirect_uri);
