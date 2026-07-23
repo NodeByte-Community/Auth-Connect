@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { LogOut, UserCircle, Plus, Shield, RefreshCw, Loader2, ExternalLink, AlertCircle, MonitorSmartphone } from "lucide-react";
+import { LogOut, UserCircle, Plus, Shield, RefreshCw, Loader2, ExternalLink, AlertCircle, MonitorSmartphone, Copy, Activity, TrendingUp } from "lucide-react";
 
 interface AppItem {
   id: string;
@@ -121,6 +121,16 @@ export function ConnectDashboard() {
           </div>
         )}
 
+        {/* Quick stats summary */}
+        {!loadingApps && apps.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatCard label="应用总数" value={apps.length} icon={<ExternalLink className="w-4 h-4" />} gradient="from-teal-500 to-emerald-500" />
+            <StatCard label="已通过" value={apps.filter(a => a.status === "approved").length} icon={<TrendingUp className="w-4 h-4" />} gradient="from-emerald-500 to-green-500" />
+            <StatCard label="待审核" value={apps.filter(a => a.status === "pending" || a.status === "pending_re_review").length} icon={<Activity className="w-4 h-4" />} gradient="from-amber-500 to-orange-500" />
+            <StatCard label="已拒绝/停用" value={apps.filter(a => a.status === "rejected" || a.status === "disabled").length} icon={<AlertCircle className="w-4 h-4" />} gradient="from-slate-400 to-slate-500" />
+          </div>
+        )}
+
         {/* Apps list */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -131,8 +141,15 @@ export function ConnectDashboard() {
           {loadingApps ? (
             <div className="flex items-center justify-center py-12 text-slate-400"><Loader2 className="w-6 h-6 animate-spin" /></div>
           ) : apps.length === 0 ? (
-            <Card className="p-8 text-center text-slate-400 border-dashed">
-              <p className="text-sm">暂无应用，点击「申请应用」创建第一个吧</p>
+            <Card className="p-12 text-center border-dashed">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-50 border flex items-center justify-center mb-4">
+                <Plus className="w-8 h-8 text-teal-400" />
+              </div>
+              <p className="text-slate-600 font-medium mb-1">还没有应用</p>
+              <p className="text-xs text-slate-400 mb-4">创建你的第一个应用，开始接入 NodeByte SSO</p>
+              <Button size="sm" onClick={() => setApplyOpen(true)}>
+                <Plus className="w-4 h-4 mr-1" /> 申请应用
+              </Button>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -168,6 +185,12 @@ function AppCard({ app, onClick }: { app: AppItem; onClick: () => void }) {
   };
   const st = statusMap[app.status] || statusMap.pending;
 
+  const handleCopyId = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(app.appId);
+    toast.success("APP ID 已复制");
+  };
+
   return (
     <Card className={`p-4 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden border-l-0`} onClick={onClick}>
       {/* Left accent bar */}
@@ -184,10 +207,31 @@ function AppCard({ app, onClick }: { app: AppItem; onClick: () => void }) {
           <p className="text-xs text-slate-500 mt-1 line-clamp-2">{app.description}</p>
           <div className="flex items-center gap-2 mt-2 min-w-0">
             <Badge variant="secondary" className="text-[10px] uppercase font-mono shrink-0">{app.type}</Badge>
-            <span className="text-[10px] text-slate-500 font-mono truncate min-w-0">{app.appId}</span>
+            <span className="text-[10px] text-slate-500 font-mono truncate min-w-0 flex-1">{app.appId}</span>
+            <button
+              onClick={handleCopyId}
+              className="shrink-0 p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-teal-600 transition-colors"
+              title="复制 APP ID"
+              aria-label="复制 APP ID"
+            >
+              <Copy className="w-3 h-3" />
+            </button>
           </div>
         </div>
       </div>
+    </Card>
+  );
+}
+
+function StatCard({ label, value, icon, gradient }: { label: string; value: number; icon: React.ReactNode; gradient: string }) {
+  return (
+    <Card className="p-3 relative overflow-hidden hover:shadow-md transition-shadow">
+      <div className={`absolute -top-4 -right-4 w-16 h-16 rounded-full bg-gradient-to-br ${gradient} opacity-10 blur-xl`} />
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[11px] font-medium text-slate-500">{label}</span>
+        <div className={`w-6 h-6 rounded-md bg-gradient-to-br ${gradient} text-white flex items-center justify-center`}>{icon}</div>
+      </div>
+      <div className="text-xl font-black text-slate-800 tabular-nums">{value}</div>
     </Card>
   );
 }
