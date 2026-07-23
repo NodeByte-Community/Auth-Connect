@@ -242,11 +242,11 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
               )}
 
               <div className="rounded-lg border divide-y">
-                <Row label="APP ID" value={app.appId} />
+                <Row label="APP ID" value={app.appId} copyable />
                 <Row label="类型" value={app.type.toUpperCase()} />
                 <Row label="创建时间" value={fmtDate(app.createdAt)} />
-                <Row label="回调地址" value={app.callbackUrls.replace(/\n/g, ", ")} />
-                <Row label="权限范围" value={app.scopes} />
+                <Row label="回调地址" value={app.callbackUrls.replace(/\n/g, ", ")} copyable />
+                <Row label="权限范围" value={app.scopes} copyable />
               </div>
 
               <div className="space-y-1">
@@ -472,11 +472,27 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value, copyable }: { label: string; value: string; copyable?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   return (
-    <div className="flex items-center gap-3 p-3">
+    <div className="flex items-center gap-3 p-3 group">
       <span className="text-xs text-slate-400 w-24 shrink-0">{label}</span>
       <span className="text-sm font-medium text-slate-800 truncate flex-1 text-right font-mono">{value}</span>
+      {copyable && (
+        <button
+          onClick={handleCopy}
+          className="shrink-0 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-100 text-slate-400 hover:text-teal-600"
+          title="复制"
+          aria-label={`复制${label}`}
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+        </button>
+      )}
     </div>
   );
 }

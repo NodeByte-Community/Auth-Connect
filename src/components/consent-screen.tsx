@@ -133,9 +133,13 @@ export function ConsentScreen() {
             })}
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-600 mb-4 p-2 rounded-lg bg-slate-50 border">
-            <Lock className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-            <span>授权后将跳转至 <span className="font-mono font-semibold text-slate-800">{new URL(redirect_uri).hostname}</span></span>
+          <div className="flex items-start gap-2 text-xs text-slate-600 mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+            <Lock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-slate-700">授权后将跳转至：</p>
+              <p className="font-mono font-bold text-amber-700 break-all mt-0.5">{new URL(redirect_uri).hostname}</p>
+              <p className="text-[10px] text-slate-400 mt-1">请确认您信任此站点，授权后将分享您的账户信息</p>
+            </div>
           </div>
 
           <div className="flex gap-2">
