@@ -675,3 +675,50 @@ NodeByte Connect 是一个基于 Discourse Connect 的统一身份认证 (SSO) �
 4. 暗黑模式支持
 5. 国际化 (i18n)
 6. 应用健康检查定时任务
+
+---
+
+## 第十二轮迭代 (2025-01-23) — 表格视觉增强 + 概览页交互优化
+
+### 项目当前状态描述
+基于 VLM QA 对日志页面和概览页的反馈，本轮增强表格可读性（斑马纹、颜色编码标签）和概览页交互性（可点击KPI卡片、查看全部链接）。
+
+### 当前目标 / 已完成的修改 / 验证结果
+
+#### 表格视觉增强
+1. **斑马纹** — 4个admin表格统一添加 even:bg-slate-50/50，hover改为 teal-50/50
+2. **颜色编码日志标签** (actionTagColor函数)
+   - 绿色: approve/enable/verify success (ADMIN_REVIEW_APPROVE, OAUTH_APPROVE等)
+   - 红色: reject/disable/delete/ban (ADMIN_REVIEW_REJECT, APP_DELETE等)
+   - 琥珀色: submit/edit/settings (APP_SUBMIT, APP_EDIT, ADMIN_SETTINGS_UPDATE等)
+   - 青色: login/logout/token (LOGIN, LOGOUT, OAUTH_TOKEN_ISSUED)
+   - 紫色: dev/session (DEV_LOGIN, SESSION_REVOKE)
+3. **日志详情tooltip** — 长文本添加title属性，hover显示完整内容
+
+#### 概览页交互优化
+1. **可点击KPI卡片** — 4个KPI卡片添加onClick导航:
+   - 应用总数 → apps tab
+   - 注册用户 → users tab
+   - Token签发 → logs tab
+   - 待审核 → reviews tab
+   - cursor-pointer + hover:scale-[1.02] 动效
+2. **查看全部链接** — 最近审核决定和最近活动区域添加"查看全部 →"按钮
+
+#### 验证结果
+- ✅ Lint 全部通过
+- ✅ 斑马纹显示 (VLM确认: 奇偶行背景色不同)
+- ✅ 颜色编码标签 (VLM确认: 拒绝红色,通过绿色,编辑黄色)
+- ✅ KPI卡片点击导航 (测试: 点击应用总数→跳转应用列表)
+- ✅ 查看全部链接显示
+- ✅ 代码已推送 GitHub (commit 4e9734c)
+
+### 未解决问题或风险
+1. Discourse 站内信通知仍未端到端测试
+2. 趋势图数据稀疏（需真实使用数据）
+
+### 建议下一阶段优先事项
+1. 配置真实 Discourse 凭据测试站内信通知
+2. PKCE 支持（OAuth2 安全增强）
+3. 暗黑模式支持
+4. 国际化 (i18n)
+5. 应用健康检查定时任务
