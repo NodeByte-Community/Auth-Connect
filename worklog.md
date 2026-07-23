@@ -245,3 +245,54 @@ NodeByte Connect 是一个基于 Discourse Connect 的统一身份认证 (SSO) �
 5. 国际化 (i18n) 中英文切换
 6. User-Agent 解析用于会话设备识别
 7. 应用接入统计图表增强（按小时/天/周聚合）
+
+---
+
+## 第四轮迭代 (2025-01-23) — 品牌重命名 Discourse SSO → NodeByte SSO
+
+### 项目当前状态描述
+用户要求将所有用户可见的"Discourse SSO/Connect"文案替换为"NodeByte SSO"。底层 API 调用仍为 Discourse，但用户面向的界面统一使用 NodeByte 品牌名。
+
+### 当前目标 / 已完成的修改 / 验证结果
+
+#### 用户可见文案替换（9处）
+1. **登录页** (`page.tsx`)
+   - 副标题："基于 Discourse Connect" → "基于 NodeByte SSO"
+   - 特性标签："Discourse SSO" → "NodeByte SSO"
+   - 提示文字："跳转至 Discourse 社区" → "跳转至 NodeByte 社区"
+2. **Layout metadata** — description 和 keywords 更新
+3. **Dashboard footer** — "基于 Discourse Connect" → "基于 NodeByte SSO"
+4. **个人中心** (`personal-center.tsx`)
+   - "通过 Discourse 社区账号登录" → "通过 NodeByte 社区账号登录"
+   - "前往 Discourse 社区个人设置" → "前往 NodeByte 社区个人设置"
+5. **应用详情验证** (`app-detail-dialog.tsx`)
+   - "Discourse 站内信" → "NodeByte 站内信"（3处）
+   - "Discourse 社区 → 个人消息" → "NodeByte 社区 → 个人消息"
+6. **管理后台概览** — "Discourse API" 状态标签 → "NodeByte API"
+7. **管理后台设置** — "Discourse API 批量获取" → "NodeByte API 批量获取"
+8. **验证码 API 成功消息** — "Discourse 站内信" → "NodeByte 站内信"
+9. **代码注释** — login route / sso.ts / verify route 注释更新
+
+#### 保留不动
+- `src/lib/discourse.ts` — 文件名和内部函数名（底层调用 Discourse API）
+- 环境变量名 `DISCOURSE_*`（配置兼容性）
+- 内部代码注释中的 Discourse 技术说明
+
+#### 验证结果
+- ✅ Lint 全部通过
+- ✅ 登录页：VLM 确认无"Discourse"字样，显示"NodeByte SSO"
+- ✅ Dashboard footer："基于 NodeByte SSO"
+- ✅ 个人中心："NodeByte 社区账号"、"NodeByte 社区个人设置"
+- ✅ 应用验证对话框："NodeByte 站内信"、"NodeByte 社区 → 个人消息"
+- ✅ 管理后台概览："NodeByte API" 状态标签
+- ✅ 代码已推送 GitHub (commit 7493c56)
+
+### 未解决问题或风险
+无。重命名仅涉及用户可见文案，底层 API 调用不受影响。
+
+### 建议下一阶段优先事项
+1. 配置真实 Discourse 凭据进行完整端到端测试
+2. PKCE 支持（OAuth2 安全增强）
+3. Webhook 事件通知
+4. 暗黑模式支持
+5. 国际化 (i18n)
