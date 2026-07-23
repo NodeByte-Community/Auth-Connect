@@ -1137,10 +1137,13 @@ function LogsTab() {
 /* ============ Settings Tab ============ */
 function SettingsTab() {
   const [settings, setSettings] = useState<any>(null);
+  const [original, setOriginal] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [testingCron, setTestingCron] = useState(false);
+  const [cronResult, setCronResult] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/settings").then(r => r.json()).then(d => setSettings(d.settings)).catch(() => toast.error("加载失败"));
+    fetch("/api/admin/settings").then(r => r.json()).then(d => { setSettings(d.settings); setOriginal(d.settings); }).catch(() => toast.error("加载失败"));
   }, []);
 
   const update = async () => {
@@ -1152,56 +1155,163 @@ function SettingsTab() {
         body: JSON.stringify(settings),
       });
       if (!res.ok) { toast.error("保存失败"); return; }
-      toast.success("已保存");
+      toast.success("设置已保存");
+      setOriginal({ ...settings });
     } catch { toast.error("网络错误"); }
     finally { setSaving(false); }
   };
 
+  const reset = () => {
+    if (original) {
+      setSettings({ ...original });
+      toast.info("已重置为上次保存的值");
+    }
+  };
+
+  const testCron = async () => {
+    setTestingCron(true);
+    setCronResult(null);
+    try {
+      const res = await fetch("/api/admin/check-banned", { method: "POST" });
+      const data = await res.json();
+      if (data.ok) {
+        setCronResult(`✓ 检查完成：检查 ${data.checked} 用户，发现 ${data.bannedCount} 封禁，停用 ${data.appsDisabled} 应用，清理 ${data.sessionsKilled} 会话，耗时 ${data.durationMs}ms`);
+        toast.success("封禁检查执行成功");
+      } else {
+        setCronResult(`✗ 执行失败: ${data.error || "未知错误"}`);
+        toast.error("封禁检查失败");
+      }
+    } catch (e: any) {
+      setCronResult(`✗ 网络错误: ${e.message}`);
+      toast.error("网络错误");
+    } finally {
+      setTestingCron(false);
+    }
+  };
+
   if (!settings) return <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
 
+  const hasChanges = JSON.stringify(settings) !== JSON.stringify(original);
+
   return (
-    <Card className="p-6 mt-4 max-w-2xl">
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <Label>每个用户最大应用数</Label>
-          <Input type="number" value={settings.maxAppsPerUser} onChange={(e) => setSettings({ ...settings, maxAppsPerUser: Number(e.target.value) })} />
+    <div className="mt-4 max-w-3xl space-y-4">
+      {/* 基础配置 */}
+      <Card className="p-5">
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 text-white flex items-center justify-center">
+            <SettingsIcon className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-800">基础配置</h3>
+            <p className="text-xs text-slate-400">应用申请与会话参数</p>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label>申请应用最低社区等级 (Trust Level)</Label>
-          <Input type="number" min={0} max={4} value={settings.minTrustLevel} onChange={(e) => setSettings({ ...settings, minTrustLevel: Number(e.target.value) })} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">每个用户最大应用数</Label>
+            <div className="relative">
+              <Input type="number" min={1} max={50} value={settings.maxAppsPerUser} onChange={(e) => setSettings({ ...settings, maxAppsPerUser: Number(e.target.value) })} className="pr-10" />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">个</span>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">申请最低社区等级</Label>
+            <div className="relative">
+              <Input type="number" min={0} max={4} value={settings.minTrustLevel} onChange={(e) => setSettings({ ...settings, minTrustLevel: Number(e.target.value) })} className="pr-12" />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">TL</span>
+            </div>
+            <p className="text-[10px] text-slate-400">0-4，Discourse Trust Level</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">会话超时时间</Label>
+            <div className="relative">
+              <Input type="number" min={5} max={1440} value={settings.sessionTimeoutMin} onChange={(e) => setSettings({ ...settings, sessionTimeoutMin: Number(e.target.value) })} className="pr-10" />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">分钟</span>
+            </div>
+            <p className="text-[10px] text-slate-400">默认 720 分钟 (12小时)</p>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label>会话超时时间（分钟）</Label>
-          <Input type="number" value={settings.sessionTimeoutMin} onChange={(e) => setSettings({ ...settings, sessionTimeoutMin: Number(e.target.value) })} />
-        </div>
+      </Card>
 
-        <div className="space-y-3 pt-2 border-t">
-          <div className="text-sm font-semibold text-slate-700 flex items-center gap-2"><Bell className="w-4 h-4" /> 站内信通知开关</div>
-          <ToggleRow label="用户提交应用时通知管理员" checked={settings.notifyOnSubmit} onChange={(v) => setSettings({ ...settings, notifyOnSubmit: v })} />
-          <ToggleRow label="审核通过时通知用户" checked={settings.notifyOnApprove} onChange={(v) => setSettings({ ...settings, notifyOnApprove: v })} />
-          <ToggleRow label="审核拒绝时通知用户" checked={settings.notifyOnReject} onChange={(v) => setSettings({ ...settings, notifyOnReject: v })} />
-          <ToggleRow label="验证失败 / 异常时通知用户" checked={settings.notifyOnFail} onChange={(v) => setSettings({ ...settings, notifyOnFail: v })} />
+      {/* 通知策略 */}
+      <Card className="p-5">
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-500 to-purple-500 text-white flex items-center justify-center">
+            <Bell className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-800">通知策略</h3>
+            <p className="text-xs text-slate-400">NodeByte 站内信通知开关</p>
+          </div>
         </div>
-
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500 space-y-1">
-          <div>封禁用户自动检查：每 <b>{process.env.NEXT_PUBLIC_BANNED_CHECK || 5}</b> 分钟执行一次（由 Cron 定时任务触发 /api/cron/check-banned）</div>
-          <div>系统将通过 NodeByte API 批量获取用户状态列表（非逐个查询），自动停用封禁用户的所有应用并清理会话。</div>
+        <div className="space-y-3">
+          <ToggleRow label="用户提交应用时通知管理员" description="新应用申请提交时" checked={settings.notifyOnSubmit} onChange={(v) => setSettings({ ...settings, notifyOnSubmit: v })} />
+          <ToggleRow label="审核通过时通知用户" description="应用审核通过时通知所有者" checked={settings.notifyOnApprove} onChange={(v) => setSettings({ ...settings, notifyOnApprove: v })} />
+          <ToggleRow label="审核拒绝时通知用户" description="应用审核拒绝时通知所有者（含理由）" checked={settings.notifyOnReject} onChange={(v) => setSettings({ ...settings, notifyOnReject: v })} />
+          <ToggleRow label="验证失败 / 异常时通知用户" description="凭据验证异常时通知" checked={settings.notifyOnFail} onChange={(v) => setSettings({ ...settings, notifyOnFail: v })} />
         </div>
+      </Card>
 
-        <Button onClick={update} disabled={saving}>
+      {/* 安全与风控 */}
+      <Card className="p-5">
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 text-white flex items-center justify-center">
+            <ShieldAlert className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-800">安全与风控</h3>
+            <p className="text-xs text-slate-400">封禁用户自动检测</p>
+          </div>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>自动检查：每 <b className="text-slate-800">{process.env.NEXT_PUBLIC_BANNED_CHECK || 5}</b> 分钟执行一次</span>
+          </div>
+          <div className="text-slate-500 pl-4">通过 NodeByte API 批量获取用户状态，自动停用封禁用户应用并清理会话</div>
+          <div className="text-slate-400 pl-4 font-mono text-[10px]">Cron 路径: /api/cron/check-banned</div>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={testCron} disabled={testingCron}>
+            {testingCron ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Activity className="w-3.5 h-3.5 mr-1" />}
+            {testingCron ? "执行中..." : "立即执行检测"}
+          </Button>
+        </div>
+        {cronResult && (
+          <div className={`mt-3 rounded-lg p-3 text-xs ${cronResult.startsWith("✓") ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-rose-200 bg-rose-50 text-rose-700"}`}>
+            {cronResult}
+          </div>
+        )}
+      </Card>
+
+      {/* Action buttons */}
+      <div className="flex items-center gap-2 sticky bottom-4 bg-white py-3 border-t">
+        <Button onClick={update} disabled={saving || !hasChanges}>
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
           保存设置
         </Button>
+        <Button variant="outline" onClick={reset} disabled={!hasChanges || saving}>
+          重置
+        </Button>
+        {hasChanges && (
+          <span className="text-xs text-amber-600 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            有未保存的更改
+          </span>
+        )}
       </div>
-    </Card>
+    </div>
   );
 }
 
-function ToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function ToggleRow({ label, description, checked, onChange }: { label: string; description?: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-slate-700">{label}</span>
-      <Switch checked={checked} onCheckedChange={onChange} />
+    <div className="flex items-center justify-between py-1.5">
+      <div className="min-w-0 pr-3">
+        <div className="text-sm text-slate-700 font-medium">{label}</div>
+        {description && <div className="text-[11px] text-slate-400 mt-0.5">{description}</div>}
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} className="shrink-0" />
     </div>
   );
 }
