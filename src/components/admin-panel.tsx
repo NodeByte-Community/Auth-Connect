@@ -147,6 +147,7 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
           sub={`${stats.appCounts.approved} 已通过 · ${stats.appCounts.pending + stats.appCounts.pending_re_review} 待审`}
           gradient="from-teal-500 to-emerald-500"
           trend={stats.trends?.apps}
+          onClick={() => onNavigate("apps")}
         />
         <KpiCard
           icon={<Users className="w-5 h-5" />}
@@ -155,6 +156,7 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
           sub={`${stats.users.admins} 管理员 · ${stats.users.banned} 封禁`}
           gradient="from-fuchsia-500 to-purple-500"
           trend={stats.trends?.users}
+          onClick={() => onNavigate("users")}
         />
         <KpiCard
           icon={<KeyRound className="w-5 h-5" />}
@@ -163,6 +165,7 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
           sub={`${stats.tokens.active} 活跃`}
           gradient="from-amber-500 to-orange-500"
           trend={stats.trends?.tokens}
+          onClick={() => onNavigate("logs")}
         />
         <KpiCard
           icon={<ScrollText className="w-5 h-5" />}
@@ -171,6 +174,7 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
           sub={stats.pendingReviews > 0 ? "需要处理" : "暂无待审"}
           gradient="from-rose-500 to-pink-500"
           highlight={stats.pendingReviews > 0}
+          onClick={() => onNavigate("reviews")}
         />
       </div>
 
@@ -207,7 +211,10 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
       {/* Recent reviews + Top apps */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-5">
-          <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4"><ScrollText className="w-4 h-4 text-rose-600" />最近审核决定</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-800 flex items-center gap-2"><ScrollText className="w-4 h-4 text-rose-600" />最近审核决定</h3>
+            <Button size="sm" variant="ghost" className="text-xs text-slate-500" onClick={() => onNavigate("reviews")}>查看全部 →</Button>
+          </div>
           {(!stats.recentReviews || stats.recentReviews.length === 0) ? (
             <p className="text-sm text-slate-400 text-center py-4">暂无审核记录</p>
           ) : (
@@ -257,7 +264,10 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
       {/* Recent activity + System status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-5">
-          <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4"><Clock className="w-4 h-4 text-teal-600" />最近活动</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-800 flex items-center gap-2"><Clock className="w-4 h-4 text-teal-600" />最近活动</h3>
+            <Button size="sm" variant="ghost" className="text-xs text-slate-500" onClick={() => onNavigate("logs")}>查看全部 →</Button>
+          </div>
           <ScrollArea className="h-64">
             <div className="space-y-2">
               {stats.recentLogs.length === 0 ? (
@@ -312,9 +322,12 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
   );
 }
 
-function KpiCard({ icon, label, value, sub, gradient, highlight, trend }: { icon: React.ReactNode; label: string; value: number; sub: string; gradient: string; highlight?: boolean; trend?: { current: number; previous: number; pct: number } }) {
+function KpiCard({ icon, label, value, sub, gradient, highlight, trend, onClick }: { icon: React.ReactNode; label: string; value: number; sub: string; gradient: string; highlight?: boolean; trend?: { current: number; previous: number; pct: number }; onClick?: () => void }) {
   return (
-    <Card className={`p-4 relative overflow-hidden transition-all hover:shadow-md ${highlight ? "ring-2 ring-rose-300 animate-pulse" : ""}`}>
+    <Card
+      className={`p-4 relative overflow-hidden transition-all hover:shadow-md ${highlight ? "ring-2 ring-rose-300 animate-pulse" : ""} ${onClick ? "cursor-pointer hover:scale-[1.02]" : ""}`}
+      onClick={onClick}
+    >
       <div className={`absolute -top-6 -right-6 w-20 h-20 rounded-full bg-gradient-to-br ${gradient} opacity-10 blur-xl`} />
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-medium text-slate-500">{label}</span>
@@ -478,6 +491,26 @@ function actionLabel(action: string): string {
   return map[action] || action;
 }
 
+/** Color-coded action tag for logs */
+function actionTagColor(action: string): string {
+  if (action.startsWith("ADMIN_REVIEW_APPROVE") || action === "ADMIN_APP_ENABLE" || action === "OAUTH_APPROVE" || action === "APP_VERIFY_OK") {
+    return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  }
+  if (action.startsWith("ADMIN_REVIEW_REJECT") || action === "ADMIN_APP_DISABLE" || action === "ADMIN_APP_DELETE" || action === "OAUTH_DENY" || action === "APP_DELETE" || action === "AUTO_BAN_DISABLE" || action === "ADMIN_LOGS_CLEAR") {
+    return "bg-rose-50 text-rose-700 border-rose-200";
+  }
+  if (action === "APP_SUBMIT" || action === "APP_EDIT" || action === "ADMIN_SETTINGS_UPDATE" || action === "ADMIN_USER_BLOCK_SUBMIT" || action === "ADMIN_USER_UNBLOCK_SUBMIT" || action === "ADMIN_USER_DISABLE_APPS") {
+    return "bg-amber-50 text-amber-700 border-amber-200";
+  }
+  if (action === "LOGIN" || action === "LOGOUT" || action === "OAUTH_TOKEN_ISSUED") {
+    return "bg-teal-50 text-teal-700 border-teal-200";
+  }
+  if (action === "DEV_LOGIN" || action === "SESSION_REVOKE" || action === "SESSION_REVOKE_ALL") {
+    return "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200";
+  }
+  return "bg-slate-50 text-slate-600 border-slate-200";
+}
+
 /** ISO 8601 date format: YYYY-MM-DD HH:mm:ss */
 function fmtDate(d: string | Date): string {
   const dt = typeof d === "string" ? new Date(d) : d;
@@ -621,7 +654,7 @@ function AppsTab() {
               <tr><td colSpan={6} className="p-8 text-center text-slate-400">暂无数据</td></tr>
             )}
             {apps.map((a) => (
-              <tr key={a.id} className="border-b hover:bg-slate-50">
+              <tr key={a.id} className="border-b hover:bg-teal-50/50 even:bg-slate-50/50">
                 <td className="p-2"><Checkbox checked={selected.has(a.id)} onCheckedChange={() => toggleSelect(a.id)} /></td>
                 <td className="p-2">
                   <div className="flex items-center gap-2">
@@ -777,7 +810,7 @@ function ReviewsTab({ onChanged }: { onChanged: () => void }) {
             {loading && <tr><td colSpan={6} className="p-8 text-center text-slate-400"><Loader2 className="w-5 h-5 animate-spin inline" /></td></tr>}
             {!loading && reviews.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-slate-400">暂无数据</td></tr>}
             {reviews.map((r) => (
-              <tr key={r.id} className="border-b hover:bg-slate-50">
+              <tr key={r.id} className="border-b hover:bg-teal-50/50 even:bg-slate-50/50">
                 <td className="p-2">{status === "pending" && <Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} />}</td>
                 <td className="p-2">
                   <div className="flex items-center gap-2">
@@ -981,7 +1014,7 @@ function UsersTab() {
             {loading && <tr><td colSpan={8} className="p-8 text-center text-slate-400"><Loader2 className="w-5 h-5 animate-spin inline" /></td></tr>}
             {!loading && filteredUsers.length === 0 && <tr><td colSpan={8} className="p-8 text-center text-slate-400">暂无数据</td></tr>}
             {filteredUsers.map((u) => (
-              <tr key={u.id} className="border-b hover:bg-slate-50">
+              <tr key={u.id} className="border-b hover:bg-teal-50/50 even:bg-slate-50/50">
                 <td className="p-2"><Checkbox checked={selected.has(u.id)} onCheckedChange={() => toggleSelect(u.id)} /></td>
                 <td className="p-2">
                   <div className="flex items-center gap-2">
@@ -1236,11 +1269,11 @@ function LogsTab() {
             {loading && <tr><td colSpan={5} className="p-8 text-center text-slate-400"><Loader2 className="w-5 h-5 animate-spin inline" /></td></tr>}
             {!loading && logs.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-slate-400">暂无日志</td></tr>}
             {logs.map((l) => (
-              <tr key={l.id} className="border-b hover:bg-slate-50">
+              <tr key={l.id} className="border-b hover:bg-teal-50/50 even:bg-slate-50/50">
                 <td className="p-2 text-xs text-slate-500 whitespace-nowrap">{fmtDate(l.createdAt)}</td>
                 <td className="p-2 text-slate-700">{l.user?.username || <span className="text-slate-400">系统</span>}</td>
-                <td className="p-2"><Badge variant="outline" className="text-xs font-mono">{l.action}</Badge></td>
-                <td className="p-2 text-slate-600 text-xs max-w-[300px] truncate">{l.details}</td>
+                <td className="p-2"><Badge variant="outline" className={`text-xs font-mono ${actionTagColor(l.action)}`}>{l.action}</Badge></td>
+                <td className="p-2 text-slate-600 text-xs max-w-[300px] truncate" title={l.details || ""}>{l.details}</td>
                 <td className="p-2 text-xs text-slate-600 font-mono">{l.ip || "-"}</td>
               </tr>
             ))}
