@@ -43,6 +43,13 @@ const statusMap: Record<string, { label: string; cls: string }> = {
   disabled: { label: "已停用", cls: "bg-slate-200 text-slate-600 border-slate-300" },
 };
 
+/** ISO 8601 date format: YYYY-MM-DD HH:mm:ss */
+function fmtDate(d: string | Date): string {
+  const dt = typeof d === "string" ? new Date(d) : d;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+}
+
 export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted }: Props) {
   const [view, setView] = useState<"detail" | "verify" | "credentials" | "edit">("detail");
   const [codeSent, setCodeSent] = useState(false);
@@ -237,7 +244,7 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
               <div className="rounded-lg border divide-y">
                 <Row label="APP ID" value={app.appId} />
                 <Row label="类型" value={app.type.toUpperCase()} />
-                <Row label="创建时间" value={new Date(app.createdAt).toLocaleString("zh-CN")} />
+                <Row label="创建时间" value={fmtDate(app.createdAt)} />
                 <Row label="回调地址" value={app.callbackUrls.replace(/\n/g, ", ")} />
                 <Row label="权限范围" value={app.scopes} />
               </div>
