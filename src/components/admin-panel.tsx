@@ -838,6 +838,8 @@ function ReviewsTab({ onChanged }: { onChanged: () => void }) {
 /* ============ Users Tab ============ */
 function UsersTab() {
   const [q, setQ] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -890,7 +892,7 @@ function UsersTab() {
     try {
       const res = await fetch(`/api/admin/users/${u.id}/apps`);
       const data = await res.json();
-      setUserApps({ user: u, apps: data.apps || [] });
+      setUserApps({ user: data.user || u, apps: data.apps || [], recentLogs: data.recentLogs || [], statusCounts: data.statusCounts || {} });
     } catch { toast.error("加载失败"); }
   };
 
@@ -908,6 +910,16 @@ function UsersTab() {
     } catch { toast.error("网络错误"); }
   };
 
+  const filteredUsers = users.filter((u) => {
+    if (roleFilter === "admin" && !u.isAdmin) return false;
+    if (roleFilter === "moderator" && !u.isModerator) return false;
+    if (roleFilter === "normal" && (u.isAdmin || u.isModerator)) return false;
+    if (statusFilter === "banned" && !u.isBanned) return false;
+    if (statusFilter === "blocked" && !u.appSubmitBlocked) return false;
+    if (statusFilter === "normal" && (u.isBanned || u.appSubmitBlocked)) return false;
+    return true;
+  });
+
   return (
     <Card className="p-4 mt-4">
       <div className="flex flex-wrap gap-2 mb-3">
@@ -915,6 +927,24 @@ function UsersTab() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <Input placeholder="搜索用户名 / 邮箱 / 名称" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} className="pl-9" />
         </div>
+        <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v === "all" ? "" : v); setPage(1); }}>
+          <SelectTrigger className="w-[120px]"><SelectValue placeholder="角色" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部角色</SelectItem>
+            <SelectItem value="admin">管理员</SelectItem>
+            <SelectItem value="moderator">版主</SelectItem>
+            <SelectItem value="normal">普通用户</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v === "all" ? "" : v); setPage(1); }}>
+          <SelectTrigger className="w-[120px]"><SelectValue placeholder="状态" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部状态</SelectItem>
+            <SelectItem value="banned">封禁</SelectItem>
+            <SelectItem value="blocked">禁申</SelectItem>
+            <SelectItem value="normal">正常</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {selected.size > 0 && (
@@ -931,7 +961,7 @@ function UsersTab() {
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-slate-50 border-b">
             <tr>
-              <th className="p-2 text-left w-8"><Checkbox checked={selected.size === users.length && users.length > 0} onCheckedChange={() => selected.size === users.length ? setSelected(new Set()) : setSelected(new Set(users.map((u) => u.id)))} /></th>
+              <th className="p-2 text-left w-8"><Checkbox checked={selected.size === filteredUsers.length && filteredUsers.length > 0} onCheckedChange={() => selected.size === filteredUsers.length ? setSelected(new Set()) : setSelected(new Set(filteredUsers.map((u) => u.id)))} /></th>
               <th className="p-2 text-left">用户</th>
               <th className="p-2 text-left">社区 ID</th>
               <th className="p-2 text-left">等级</th>
@@ -943,8 +973,8 @@ function UsersTab() {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={8} className="p-8 text-center text-slate-400"><Loader2 className="w-5 h-5 animate-spin inline" /></td></tr>}
-            {!loading && users.length === 0 && <tr><td colSpan={8} className="p-8 text-center text-slate-400">暂无数据</td></tr>}
-            {users.map((u) => (
+            {!loading && filteredUsers.length === 0 && <tr><td colSpan={8} className="p-8 text-center text-slate-400">暂无数据</td></tr>}
+            {filteredUsers.map((u) => (
               <tr key={u.id} className="border-b hover:bg-slate-50">
                 <td className="p-2"><Checkbox checked={selected.has(u.id)} onCheckedChange={() => toggleSelect(u.id)} /></td>
                 <td className="p-2">
@@ -990,33 +1020,123 @@ function UsersTab() {
       </div>
 
       <Dialog open={!!userApps} onOpenChange={(o) => !o && setUserApps(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>{userApps?.user.username} 的应用</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-fuchsia-600" />
+              用户详情
+            </DialogTitle>
           </DialogHeader>
-          <ScrollArea className="flex-1">
+          {userApps && <UserDetailContent data={userApps} onDisableApp={disableApp} fmtDate={fmtDate} />}
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+function UserDetailContent({ data, onDisableApp, fmtDate }: { data: any; onDisableApp: (id: string) => void; fmtDate: (d: string | Date) => string }) {
+  const { user, apps, recentLogs, statusCounts } = data;
+  const trustLevelNames = ["新用户", "基本用户", "成员", "活跃用户", "领导者"];
+  return (
+    <ScrollArea className="flex-1 pr-2">
+      <div className="space-y-4">
+        {/* User info header */}
+        <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-fuchsia-50 to-purple-50 border">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-fuchsia-400 to-purple-500 border-2 border-white shadow flex items-center justify-center text-white font-bold text-xl shrink-0 overflow-hidden">
+            {user.avatarUrl ? <img src={user.avatarUrl} className="w-full h-full object-cover" alt="" /> : (user.username?.[0] || "?").toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-bold text-lg truncate">{user.name || user.username}</span>
+              <Badge variant="outline" className="text-xs">Lv.{user.trustLevel} {trustLevelNames[user.trustLevel] || ""}</Badge>
+              {user.isAdmin && <Badge className="bg-rose-500 text-xs">管理员</Badge>}
+              {user.isModerator && <Badge className="bg-amber-500 text-xs">版主</Badge>}
+              {user.isBanned && <Badge className="bg-slate-500 text-xs">封禁</Badge>}
+              {user.appSubmitBlocked && <Badge className="bg-amber-100 text-amber-700 text-xs">禁申</Badge>}
+            </div>
+            <div className="text-sm text-slate-500 mt-1">@{user.username} · ID: {user.externalId}</div>
+            <div className="text-xs text-slate-400 mt-0.5">{user.email}</div>
+            <div className="text-[10px] text-slate-400 mt-1 flex gap-3">
+              <span>注册: {fmtDate(user.createdAt)}</span>
+              {user.lastLoginAt && <span>最后登录: {fmtDate(user.lastLoginAt)}</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* App stats summary */}
+        <div className="grid grid-cols-4 gap-2">
+          <div className="rounded-lg border p-2 text-center bg-emerald-50">
+            <div className="text-lg font-black text-emerald-700">{statusCounts.approved || 0}</div>
+            <div className="text-[10px] text-slate-500">已通过</div>
+          </div>
+          <div className="rounded-lg border p-2 text-center bg-amber-50">
+            <div className="text-lg font-black text-amber-700">{(statusCounts.pending || 0) + (statusCounts.pending_re_review || 0)}</div>
+            <div className="text-[10px] text-slate-500">待审核</div>
+          </div>
+          <div className="rounded-lg border p-2 text-center bg-rose-50">
+            <div className="text-lg font-black text-rose-700">{statusCounts.rejected || 0}</div>
+            <div className="text-[10px] text-slate-500">已拒绝</div>
+          </div>
+          <div className="rounded-lg border p-2 text-center bg-slate-50">
+            <div className="text-lg font-black text-slate-600">{statusCounts.disabled || 0}</div>
+            <div className="text-[10px] text-slate-500">已停用</div>
+          </div>
+        </div>
+
+        {/* Apps list */}
+        <div>
+          <h4 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+            <AppWindow className="w-4 h-4 text-teal-600" /> 应用列表 ({apps.length})
+          </h4>
+          {apps.length === 0 ? (
+            <p className="text-center text-slate-400 py-4 text-sm">暂无应用</p>
+          ) : (
             <div className="space-y-2">
-              {userApps?.apps.length === 0 && <p className="text-center text-slate-400 py-4">暂无应用</p>}
-              {userApps?.apps.map((a) => (
-                <div key={a.id} className="flex items-center gap-3 p-2 rounded-lg border">
-                  <div className="w-10 h-10 rounded bg-slate-50 border flex items-center justify-center overflow-hidden shrink-0">
+              {apps.map((a: any) => (
+                <div key={a.id} className="flex items-center gap-3 p-2 rounded-lg border hover:bg-slate-50">
+                  <div className="w-10 h-10 rounded-lg bg-slate-50 border flex items-center justify-center overflow-hidden shrink-0">
                     {a.icon ? <img src={a.icon} className="w-full h-full object-contain" alt="" /> : <ImageIcon className="w-4 h-4 text-slate-300" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="font-medium truncate">{a.name}</div>
-                    <div className="text-xs text-slate-600 font-mono">{a.appId}</div>
+                    <div className="text-xs text-slate-500 font-mono truncate">{a.appId}</div>
                   </div>
-                  <Badge variant="outline">{a.status}</Badge>
+                  <Badge variant="outline" className={`shrink-0 text-xs ${a.status === "approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : a.status === "rejected" ? "bg-rose-50 text-rose-700 border-rose-200" : a.status === "disabled" ? "bg-slate-100 text-slate-500" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
+                    {a.status === "approved" ? "已通过" : a.status === "rejected" ? "已拒绝" : a.status === "disabled" ? "已停用" : a.status === "pending_re_review" ? "待复审" : "待审核"}
+                  </Badge>
                   {a.status !== "disabled" && a.status !== "rejected" && (
-                    <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => disableApp(a.id)}><Pause className="w-3.5 h-3.5" /></Button>
+                    <Button size="sm" variant="ghost" className="text-rose-600 shrink-0" onClick={() => onDisableApp(a.id)} title="停用">
+                      <Pause className="w-3.5 h-3.5" />
+                    </Button>
                   )}
                 </div>
               ))}
             </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-    </Card>
+          )}
+        </div>
+
+        {/* Recent activity */}
+        {recentLogs && recentLogs.length > 0 && (
+          <div>
+            <h4 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+              <Activity className="w-4 h-4 text-amber-600" /> 最近活动 ({recentLogs.length})
+            </h4>
+            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+              {recentLogs.map((l: any) => (
+                <div key={l.id} className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 text-xs">
+                  <div className="w-1.5 h-1.5 rounded-full bg-teal-500 mt-1.5 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <span className="font-mono text-slate-600">{l.action}</span>
+                    {l.details && <span className="text-slate-400 ml-1">— {l.details}</span>}
+                    <div className="text-[10px] text-slate-400">{fmtDate(l.createdAt)}{l.ip && ` · ${l.ip}`}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </ScrollArea>
   );
 }
 
