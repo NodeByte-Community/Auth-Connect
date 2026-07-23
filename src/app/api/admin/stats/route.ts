@@ -66,6 +66,36 @@ export async function GET() {
     });
   }
 
+  // Week-over-week comparison for KPI trend indicators
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekAgoStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const twoWeeksAgoStart = new Date(todayStart.getTime() - 14 * 24 * 60 * 60 * 1000);
+  const [thisWeekApps, lastWeekApps, thisWeekUsers, lastWeekUsers, thisWeekTokens, lastWeekTokens] = await Promise.all([
+    db.application.count({ where: { createdAt: { gte: weekAgoStart } } }),
+    db.application.count({ where: { createdAt: { gte: twoWeeksAgoStart, lt: weekAgoStart } } }),
+    db.user.count({ where: { createdAt: { gte: weekAgoStart } } }),
+    db.user.count({ where: { createdAt: { gte: twoWeeksAgoStart, lt: weekAgoStart } } }),
+    db.accessToken.count({ where: { createdAt: { gte: weekAgoStart } } }),
+    db.accessToken.count({ where: { createdAt: { gte: twoWeeksAgoStart, lt: weekAgoStart } } }),
+  ]);
+  const calcTrend = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+  const trends = {
+    apps: { current: thisWeekApps, previous: lastWeekApps, pct: calcTrend(thisWeekApps, lastWeekApps) },
+    users: { current: thisWeekUsers, previous: lastWeekUsers, pct: calcTrend(thisWeekUsers, lastWeekUsers) },
+    tokens: { current: thisWeekTokens, previous: lastWeekTokens, pct: calcTrend(thisWeekTokens, lastWeekTokens) },
+  };
+
+  // Recent review decisions (last 5 non-pending)
+  const recentReviews = await db.appReview.findMany({
+    where: { status: { in: ["approved", "rejected"] } },
+    take: 5,
+    orderBy: { reviewedAt: "desc" },
+    include: { app: { select: { name: true, appId: true, icon: true } }, reviewer: { select: { username: true } } },
+  });
+
   // Top apps by token issuance
   const topAppsRaw = await db.accessToken.groupBy({
     by: ["appId"],
@@ -110,7 +140,17 @@ export async function GET() {
     tokens: { total: totalTokensIssued, active: activeTokens },
     pendingReviews,
     dailyTrend: days,
+    trends,
     topApps,
+    recentReviews: recentReviews.map((r) => ({
+      id: r.id,
+      status: r.status,
+      reason: r.reason,
+      reviewedAt: r.reviewedAt?.toISOString() || null,
+      appName: r.app?.name || "未知",
+      appIcon: r.app?.icon,
+      reviewer: r.reviewer?.username || "system",
+    })),
     recentLogs: recentLogs.map((l) => ({
       id: l.id,
       action: l.action,

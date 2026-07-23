@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
   const status = sp.get("status") || "pending";
   const page = Math.max(1, Number(sp.get("page") || 1));
   const pageSize = Math.max(1, Math.min(100, Number(sp.get("pageSize") || 20)));
+  const isExport = sp.get("export") === "1";
 
   const where: any = {};
   if (status) where.status = status;
@@ -31,6 +32,33 @@ export async function GET(req: NextRequest) {
       { app: { name: { contains: q } } },
       { app: { owner: { username: { contains: q } } } },
     ];
+  }
+
+  if (isExport) {
+    const allReviews = await db.appReview.findMany({
+      where,
+      include: { app: { include: { owner: true } }, reviewer: true },
+      orderBy: { createdAt: "desc" },
+      take: 10000,
+    });
+    const csvHeader = "时间,应用名,应用ID,申请者,类型,状态,审核人,理由\n";
+    const csvBody = allReviews.map((r) => {
+      const time = r.createdAt.toISOString();
+      const appName = (r.app?.name || "").replace(/"/g, '""');
+      const appId = (r.app?.appId || "").replace(/"/g, '""');
+      const owner = (r.app?.owner?.username || "").replace(/"/g, '""');
+      const type = r.app?.type || "";
+      const status = r.status === "approved" ? "已通过" : r.status === "rejected" ? "已拒绝" : "待审核";
+      const reviewer = (r.reviewer?.username || "").replace(/"/g, '""');
+      const reason = (r.reason || "").replace(/"/g, '""').replace(/\n/g, " ");
+      return `"${time}","${appName}","${appId}","${owner}","${type}","${status}","${reviewer}","${reason}"`;
+    }).join("\n");
+    return new NextResponse("\ufeff" + csvHeader + csvBody, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="nbconnect-reviews-${Date.now()}.csv"`,
+      },
+    });
   }
 
   const [reviews, total] = await Promise.all([

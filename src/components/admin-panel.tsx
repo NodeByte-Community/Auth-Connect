@@ -21,7 +21,7 @@ import {
   Download, Eraser, ExternalLink, Image as ImageIcon, Bell, BellOff, AlertTriangle,
   Users, FileText, Settings as SettingsIcon, AppWindow, ShieldAlert,
   LayoutDashboard, ScrollText, Activity, TrendingUp, Clock, CheckCircle, XCircle as XIcon,
-  KeyRound, UserCheck, Server
+  KeyRound, UserCheck, Server, ArrowUpRight, ArrowDownRight, Minus
 } from "lucide-react";
 
 export function AdminPanel() {
@@ -91,7 +91,7 @@ export function AdminPanel() {
             <TabsTrigger value="settings" className="flex items-center gap-1.5"><SettingsIcon className="w-4 h-4" />系统设置</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview"><OverviewTab /></TabsContent>
+          <TabsContent value="overview"><OverviewTab onNavigate={setTab} /></TabsContent>
           <TabsContent value="apps"><AppsTab /></TabsContent>
           <TabsContent value="reviews"><ReviewsTab onChanged={() => setPendingRefreshKey((k) => k + 1)} /></TabsContent>
           <TabsContent value="users"><UsersTab /></TabsContent>
@@ -108,7 +108,7 @@ export function AdminPanel() {
 }
 
 /* ============ Overview Tab ============ */
-function OverviewTab() {
+function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -146,6 +146,7 @@ function OverviewTab() {
           value={stats.appCounts.total}
           sub={`${stats.appCounts.approved} 已通过 · ${stats.appCounts.pending + stats.appCounts.pending_re_review} 待审`}
           gradient="from-teal-500 to-emerald-500"
+          trend={stats.trends?.apps}
         />
         <KpiCard
           icon={<Users className="w-5 h-5" />}
@@ -153,6 +154,7 @@ function OverviewTab() {
           value={stats.users.total}
           sub={`${stats.users.admins} 管理员 · ${stats.users.banned} 封禁`}
           gradient="from-fuchsia-500 to-purple-500"
+          trend={stats.trends?.users}
         />
         <KpiCard
           icon={<KeyRound className="w-5 h-5" />}
@@ -160,6 +162,7 @@ function OverviewTab() {
           value={stats.tokens.total}
           sub={`${stats.tokens.active} 活跃`}
           gradient="from-amber-500 to-orange-500"
+          trend={stats.trends?.tokens}
         />
         <KpiCard
           icon={<ScrollText className="w-5 h-5" />}
@@ -193,25 +196,7 @@ function OverviewTab() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-slate-800 flex items-center gap-2"><TrendingUp className="w-4 h-4 text-fuchsia-600" />近 14 天趋势</h3>
           </div>
-          <div className="flex items-end gap-1 h-32">
-            {stats.dailyTrend.map((d: any, i: number) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
-                <div className="w-full flex flex-col justify-end h-full gap-0.5">
-                  <div
-                    className="w-full bg-gradient-to-t from-amber-500 to-orange-400 rounded-t-sm transition-all group-hover:from-amber-600 group-hover:to-orange-500"
-                    style={{ height: `${(d.tokens / maxDaily) * 100}%`, minHeight: d.tokens > 0 ? "2px" : "0" }}
-                    title={`Token: ${d.tokens}`}
-                  />
-                  <div
-                    className="w-full bg-gradient-to-t from-teal-500 to-emerald-400 rounded-t-sm transition-all group-hover:from-teal-600 group-hover:to-emerald-500"
-                    style={{ height: `${(d.apps / maxDaily) * 100}%`, minHeight: d.apps > 0 ? "2px" : "0" }}
-                    title={`应用: ${d.apps}`}
-                  />
-                </div>
-                <span className="text-[8px] text-slate-400">{d.date.slice(5)}</span>
-              </div>
-            ))}
-          </div>
+          <InteractiveChart data={stats.dailyTrend} maxDaily={maxDaily} />
           <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-teal-500" />新增应用</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-500" />Token 签发</span>
@@ -219,8 +204,32 @@ function OverviewTab() {
         </Card>
       </div>
 
-      {/* Top apps + recent activity */}
+      {/* Recent reviews + Top apps */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="p-5">
+          <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4"><ScrollText className="w-4 h-4 text-rose-600" />最近审核决定</h3>
+          {(!stats.recentReviews || stats.recentReviews.length === 0) ? (
+            <p className="text-sm text-slate-400 text-center py-4">暂无审核记录</p>
+          ) : (
+            <div className="space-y-2">
+              {stats.recentReviews.map((r: any) => (
+                <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${r.status === "approved" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
+                    {r.status === "approved" ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                  </div>
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <div className="text-sm font-medium truncate">{r.appName}</div>
+                    <div className="text-xs text-slate-400">由 {r.reviewer} 审核 · {r.reviewedAt ? fmtDate(r.reviewedAt) : "-"}</div>
+                  </div>
+                  <Badge variant="outline" className={`shrink-0 text-xs ${r.status === "approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"}`}>
+                    {r.status === "approved" ? "通过" : "拒绝"}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
         <Card className="p-5">
           <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4"><Activity className="w-4 h-4 text-amber-600" />Token 签发 Top 5</h3>
           {stats.topApps.length === 0 ? (
@@ -243,7 +252,10 @@ function OverviewTab() {
             </div>
           )}
         </Card>
+      </div>
 
+      {/* Recent activity + System status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-5">
           <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4"><Clock className="w-4 h-4 text-teal-600" />最近活动</h3>
           <ScrollArea className="h-64">
@@ -268,33 +280,105 @@ function OverviewTab() {
             </div>
           </ScrollArea>
         </Card>
-      </div>
 
-      {/* System status */}
-      <Card className="p-5">
-        <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4"><Server className="w-4 h-4 text-emerald-600" />系统状态</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatusItem label="OAuth2 端点" ok />
-          <StatusItem label="OIDC Discovery" ok />
-          <StatusItem label="NodeByte API" ok={stats.appCounts.total > 0} />
-          <StatusItem label="封禁检测 Cron" ok warning />
-        </div>
-      </Card>
+        <Card className="p-5">
+          <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4"><Server className="w-4 h-4 text-emerald-600" />系统状态</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <StatusItem label="OAuth2 端点" ok />
+            <StatusItem label="OIDC Discovery" ok />
+            <StatusItem label="NodeByte API" ok={stats.appCounts.total > 0} />
+            <StatusItem label="封禁检测 Cron" ok warning />
+          </div>
+          <div className="mt-4 pt-3 border-t">
+            <div className="text-xs text-slate-500 mb-2">快速操作</div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => onNavigate("reviews")}>
+                <ScrollText className="w-3.5 h-3.5 mr-1" /> 查看审核
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => onNavigate("logs")}>
+                <Download className="w-3.5 h-3.5 mr-1" /> 用户日志
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => onNavigate("apps")}>
+                <AppWindow className="w-3.5 h-3.5 mr-1" /> 应用列表
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => onNavigate("settings")}>
+                <SettingsIcon className="w-3.5 h-3.5 mr-1" /> 系统设置
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
 
-function KpiCard({ icon, label, value, sub, gradient, highlight }: { icon: React.ReactNode; label: string; value: number; sub: string; gradient: string; highlight?: boolean }) {
+function KpiCard({ icon, label, value, sub, gradient, highlight, trend }: { icon: React.ReactNode; label: string; value: number; sub: string; gradient: string; highlight?: boolean; trend?: { current: number; previous: number; pct: number } }) {
   return (
-    <Card className={`p-4 relative overflow-hidden ${highlight ? "ring-2 ring-rose-300 animate-pulse" : ""}`}>
+    <Card className={`p-4 relative overflow-hidden transition-all hover:shadow-md ${highlight ? "ring-2 ring-rose-300 animate-pulse" : ""}`}>
       <div className={`absolute -top-6 -right-6 w-20 h-20 rounded-full bg-gradient-to-br ${gradient} opacity-10 blur-xl`} />
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-medium text-slate-500">{label}</span>
         <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} text-white flex items-center justify-center`}>{icon}</div>
       </div>
-      <div className="text-2xl font-black text-slate-800">{value.toLocaleString()}</div>
-      <div className="text-xs text-slate-400 mt-1">{sub}</div>
+      <div className="flex items-end gap-2">
+        <div className="text-2xl font-black text-slate-800">{value.toLocaleString()}</div>
+        {trend && (
+          <div className={`flex items-center gap-0.5 text-[10px] font-bold pb-1 ${trend.pct > 0 ? "text-emerald-600" : trend.pct < 0 ? "text-rose-600" : "text-slate-400"}`}>
+            {trend.pct > 0 ? <ArrowUpRight className="w-3 h-3" /> : trend.pct < 0 ? <ArrowDownRight className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+            {Math.abs(trend.pct)}%
+          </div>
+        )}
+      </div>
+      <div className="text-xs text-slate-400 mt-1 flex items-center justify-between">
+        <span>{sub}</span>
+        {trend && (
+          <span className="text-[9px] text-slate-400">本周 {trend.current} · 上周 {trend.previous}</span>
+        )}
+      </div>
     </Card>
+  );
+}
+
+function InteractiveChart({ data, maxDaily }: { data: any[]; maxDaily: number }) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  return (
+    <div className="relative">
+      <div className="flex items-end gap-1 h-32">
+        {data.map((d: any, i: number) => (
+          <div
+            key={i}
+            className="flex-1 flex flex-col items-center gap-1 relative cursor-pointer"
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          >
+            {/* Hover tooltip */}
+            {hovered === i && (
+              <div className="absolute -top-20 left-1/2 -translate-x-1/2 z-20 bg-slate-900 text-white text-[10px] rounded-lg px-2 py-1.5 shadow-xl whitespace-nowrap pointer-events-none">
+                <div className="font-bold mb-0.5">{d.date}</div>
+                <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-teal-400" />应用: {d.apps}</div>
+                <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />Token: {d.tokens}</div>
+                <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400" />用户: {d.users}</div>
+              </div>
+            )}
+            <div className="w-full flex flex-col justify-end h-full gap-0.5">
+              <div
+                className={`w-full rounded-t-sm transition-all ${hovered === i ? "from-amber-600 to-orange-500" : "from-amber-500 to-orange-400"}`}
+                style={{ height: `${(d.tokens / maxDaily) * 100}%`, minHeight: d.tokens > 0 ? "2px" : "0", background: hovered === i ? "linear-gradient(to top, #d97706, #fb923c)" : undefined }}
+              />
+              <div
+                className={`w-full rounded-t-sm transition-all ${hovered === i ? "from-teal-600 to-emerald-500" : "from-teal-500 to-emerald-400"}`}
+                style={{ height: `${(d.apps / maxDaily) * 100}%`, minHeight: d.apps > 0 ? "2px" : "0", background: hovered === i ? "linear-gradient(to top, #0d9488, #34d399)" : undefined }}
+              />
+            </div>
+            <span className={`text-[8px] transition-colors ${hovered === i ? "text-slate-700 font-bold" : "text-slate-400"}`}>{d.date.slice(5)}</span>
+            {/* Hover indicator line */}
+            {hovered === i && (
+              <div className="absolute inset-0 border-l-2 border-teal-400/30 rounded pointer-events-none" />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -619,6 +703,9 @@ function ReviewsTab({ onChanged }: { onChanged: () => void }) {
             <SelectItem value="rejected">已拒绝</SelectItem>
           </SelectContent>
         </Select>
+        <Button variant="outline" size="sm" onClick={() => { window.open(`/api/admin/reviews?export=1&status=${status}&q=${encodeURIComponent(q)}&pageSize=10000`, "_blank"); }}>
+          <Download className="w-4 h-4 mr-1" /> 导出 CSV
+        </Button>
       </div>
 
       {selected.size > 0 && status === "pending" && (
