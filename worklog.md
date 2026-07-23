@@ -848,3 +848,85 @@ v1.1.0 是重大功能更新版本，包含自 v1.0.0 以来的所有迭代改�
 - ✅ v1.1.0 Release asset 已更新 (53MB)
 - ✅ 下载: https://github.com/cshdotcom/nbconnect/releases/download/v1.1.0/nbconnect-standalone-v1.1.0.tar.gz
 - ✅ 代码已推送 (commit 6ed088b)
+
+---
+
+## SQLite → MySQL 迁移完成 (2025-01-23)
+
+### 变更内容
+
+#### 1. prisma/schema.prisma (SQLite → MySQL)
+- `provider = "mysql"` 替换 `"sqlite"`
+- 所有 String 字段添加 `@db.VarChar(n)` / `@db.Text` 明确长度
+- `@@map("table_name")` 使用 snake_case 表名
+- `@@index()` 优化查询性能
+- 模型结构完全保持不变 (User/Session/Application/AppReview/VerificationCode/AuthCode/AccessToken/UserLog/SystemSettings)
+
+#### 2. .env / .env.example
+- 删除 `DATABASE_URL=file:...` (SQLite)
+- 新增 MySQL 连接参数: DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD
+- `DATABASE_URL=mysql://USER:PASSWORD@HOST:PORT/DATABASE` 模板
+
+#### 3. db/schema.sql (新建)
+- 194行纯 SQL CREATE TABLE 语句
+- 通过 `prisma migrate diff --from-empty` 生成
+- 包含所有表、索引、外键
+- utf8mb4_unicode_ci 字符集
+- **不依赖 Prisma CLI** - 目标服务器只需 mysql client
+
+#### 4. init-db.sh (新建)
+脚本流程:
+1. 读取 .env 中的 MySQL 连接参数
+2. 检查 mysql client 是否安装
+3. 测试 MySQL 连接 (清晰报错)
+4. 创建数据库 (如不存在, utf8mb4_unicode_ci)
+5. 检查已有表数量，空库才导入 db/schema.sql
+6. 调用 ./start.sh 启动服务
+
+错误处理:
+- .env 不存在 → 自动复制 .env.example 并提示编辑
+- mysql client 缺失 → 提示安装命令
+- 连接失败 → 显示连接详情和排查清单
+- 建库失败 → 提示检查 CREATE 权限
+- 导入失败 → 提示检查 SQL 文件和权限
+
+#### 5. start.sh (最小改动)
+- 保持原有直接启动逻辑
+- 适配 MySQL 环境 (无需改动，Prisma 自动处理)
+
+#### 6. src/lib/db.ts
+- 生产环境减少日志 (只 error/warn，不 log query)
+
+### Standalone 包内容 (v1.1.0)
+- server.js (Next.js standalone)
+- start.sh (启动脚本)
+- init-db.sh (数据库初始化)
+- .env.example (配置模板)
+- db/schema.sql (建表 SQL)
+- prisma/schema.prisma (Prisma schema 参考)
+- node_modules/ (含 Prisma MySQL 引擎)
+- public/, .next/static/
+
+### 不包含
+- MySQL 服务器软件 (用户自备)
+- mysql client (需 apt install mysql-client)
+
+### 部署流程
+```bash
+tar xzf nbconnect-standalone-v1.1.0.tar.gz
+cd standalone
+cp .env.example .env
+vim .env  # 填入 MySQL 连接信息
+chmod +x init-db.sh start.sh
+./init-db.sh  # 自动建库+建表+启动
+```
+
+### 验证
+- ✅ prisma generate 成功
+- ✅ Lint 通过
+- ✅ Build 成功
+- ✅ SQL 文件 194 行有效
+- ✅ 脚本语法检查通过
+- ✅ Standalone 包包含所有必要文件
+- ✅ GitHub Release v1.1.0 已更新
+- ✅ 代码已推送 (commit dc26676)
