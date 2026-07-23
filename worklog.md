@@ -411,3 +411,65 @@ NodeByte Connect 是一个基于 Discourse Connect 的统一身份认证 (SSO) �
 4. 国际化 (i18n)
 5. 应用健康检查定时任务（自动定期ping回调地址）
 6. Webhook 事件通知
+
+---
+
+## 第七轮迭代 (2025-01-23) — 数据可视化增强 + 微交互
+
+### 项目当前状态描述
+基于 VLM QA 反馈，本轮聚焦于数据可视化的空状态处理、KPI 数字计数动画、应用详情迷你图表。所有改动通过 agent-browser + VLM 验证。
+
+### 当前目标 / 已完成的修改 / 验证结果
+
+#### 新功能
+1. **KPI 数字计数动画** (CountUp 组件)
+   - 使用 requestAnimationFrame + easeOutCubic 缓动函数
+   - 800ms 动画时长，tabular-nums 等宽数字
+   - useRef 跟踪上一次值实现增量动画
+
+2. **趋势图空状态** (InteractiveChart)
+   - 当14天无任何数据时显示友好提示
+   - Activity 图标 + "过去 14 天暂无活动记录"
+   - 避免空白图表造成困惑
+
+3. **KPI 绝对变化指示器**
+   - 趋势百分比旁增加 "+N 较上周" 绝对数值
+   - 替换原来的"本周N·上周M"为更直观的对比
+
+4. **应用详情 4 统计卡片** (从3个扩展到4个)
+   - Token 签发 / 活跃 Token / 授权次数 / 最近使用
+   - 授权次数 (authCount) 新增 - 统计 authCode 记录数
+
+5. **应用详情 7 天迷你图表** (MiniChart 组件)
+   - 近 7 天 Token 签发柱状图
+   - hover tooltip 显示日期+次数
+   - 空状态显示"暂无 Token 签发记录"
+   - API 新增 dailyUsage (7天数组) + authCount
+
+#### 技术细节
+- InteractiveChart 柱子颜色改为 inline style (避免 Tailwind 动态类名问题)
+- CountUp 使用 useRef 避免 effect 内同步 setState lint 错误
+- MiniChart 复用 InteractiveChart 的 hover 模式
+
+#### 验证结果
+- ✅ Lint 全部通过
+- ✅ KPI CountUp 动画正常 (VLM确认数字: 6/2/8/0)
+- ✅ 趋势图空状态友好提示
+- ✅ 应用详情4统计卡片 (VLM确认: 8/0/0/2026-7-22)
+- ✅ 迷你图表显示柱状图 (VLM确认: 柱状图形式展示7天趋势)
+- ✅ 迷你图表空状态正确 (rejected app 显示"暂无记录")
+- ✅ hover tooltip 正常
+- ✅ 代码已推送 GitHub (commit 9450925)
+
+### 未解决问题或风险
+1. Top 5 应用列表数据较少（仅1个应用有Token记录）
+2. 趋势图数据集中在最后一天（需真实使用数据分布）
+
+### 建议下一阶段优先事项
+1. 配置真实 Discourse 凭据测试站内信通知
+2. PKCE 支持（OAuth2 安全增强）
+3. 暗黑模式支持
+4. 国际化 (i18n)
+5. 应用健康检查定时任务
+6. Webhook 事件通知
+7. 管理员用户详情弹窗（完整活动历史）
