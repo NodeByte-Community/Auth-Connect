@@ -6,6 +6,7 @@ import { getSettings } from "@/lib/settings";
 import { verifyCaptcha } from "@/app/api/captcha/route";
 import { logAction } from "@/lib/logs";
 import { sendDiscoursePM } from "@/lib/discourse";
+import { checkTrustLevel } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -28,19 +29,23 @@ export async function GET() {
  * POST /api/apps
  * Apply for a new application.
  * Body: { name, icon, description, type, callbackUrls, siteLogo, captchaId, captchaAnswer }
- * Security: level check (front+back), captcha, max apps per user.
+ *
+ * SECURITY: 后端不信任前端，所有校验在后端强制执行：
+ * 1. 实时从DB读取用户最新状态（不信任session快照）
+ * 2. 可选：实时从Discourse API获取最新trust_level（防降级绕过）
+ * 3. 等级校验、封禁校验、申请权限校验
+ * 4. 人机验证、字段校验、回调地址校验
+ * 5. 最大应用数限制
  */
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
 
-  // Banned / blocked check
-  const dbUser = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!dbUser || dbUser.isBanned || dbUser.isSuspended) {
-    return NextResponse.json({ error: "您的账号已被封禁，无法申请应用" }, { status: 403 });
-  }
-  if (dbUser.appSubmitBlocked) {
-    return NextResponse.json({ error: "您的应用申请权限已被管理员停用" }, { status: 403 });
+  // ===== 后端安全校验 =====
+  // 不信任 session.user.trustLevel，从 DB 重新读取 + 实时 Discourse API 验证
+  const levelCheck = await checkTrustLevel(session.user.id, { checkDiscourse: true });
+  if (!levelCheck.ok) {
+    return NextResponse.json({ error: levelCheck.error }, { status: 403 });
   }
 
   const body = await req.json();
@@ -75,13 +80,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Level check
-  const settings = await getSettings();
-  if (session.user.trustLevel < settings.minTrustLevel) {
-    return NextResponse.json({ error: `您的等级未达到要求 (需 Trust Level ${settings.minTrustLevel})` }, { status: 403 });
-  }
-
   // Max apps check
+  const settings = await getSettings();
   const count = await db.application.count({ where: { ownerId: session.user.id } });
   if (count >= settings.maxAppsPerUser) {
     return NextResponse.json({ error: `已达最大应用数限制 (${settings.maxAppsPerUser})` }, { status: 403 });

@@ -59,10 +59,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 /**
  * PUT /api/apps/[id]
  * Edit application -> sets status back to pending (requires re-review).
+ * SECURITY: 后端安全校验 - 从DB重新读取用户状态，不信任session快照。
  */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+
+  // 后端安全校验：从DB读取最新状态 + 封禁检查
+  const { securityCheck } = await import("@/lib/security");
+  const security = await securityCheck(session.user.id);
+  if (!security.ok) {
+    return NextResponse.json({ error: security.error }, { status: 403 });
+  }
 
   const { id } = await params;
   const app = await db.application.findFirst({ where: { id, ownerId: session.user.id } });
@@ -132,10 +140,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 /**
  * DELETE /api/apps/[id]
  * Delete application (owner only).
+ * SECURITY: 后端安全校验 - 从DB重新读取用户状态。
  */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+
+  // 后端安全校验
+  const { securityCheck } = await import("@/lib/security");
+  const security = await securityCheck(session.user.id);
+  if (!security.ok) return NextResponse.json({ error: security.error }, { status: 403 });
 
   const { id } = await params;
   const app = await db.application.findFirst({ where: { id, ownerId: session.user.id } });

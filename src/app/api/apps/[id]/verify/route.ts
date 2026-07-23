@@ -15,6 +15,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
 
+  // 后端安全校验
+  const { securityCheck } = await import("@/lib/security");
+  const security = await securityCheck(session.user.id);
+  if (!security.ok) return NextResponse.json({ error: security.error }, { status: 403 });
+
   const { id } = await params;
   const app = await db.application.findFirst({ where: { id, ownerId: session.user.id } });
   if (!app) return NextResponse.json({ error: "应用不存在" }, { status: 404 });
@@ -63,6 +68,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+
+  // 后端安全校验
+  const { securityCheck } = await import("@/lib/security");
+  const security = await securityCheck(session.user.id);
+  if (!security.ok) return NextResponse.json({ error: security.error }, { status: 403 });
 
   const { id } = await params;
   const app = await db.application.findFirst({ where: { id, ownerId: session.user.id } });
