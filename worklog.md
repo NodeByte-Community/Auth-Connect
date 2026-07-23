@@ -764,3 +764,48 @@ NodeByte Connect 是一个基于 Discourse Connect 的统一身份认证 (SSO) �
 4. 国际化 (i18n)
 5. 应用健康检查定时任务
 6. 应用Logo上传功能（目前只支持URL）
+
+---
+
+## v1.1.0 Release 发布 (2025-01-23)
+
+### 发布内容
+- **Tag**: v1.1.0
+- **Release**: https://github.com/cshdotcom/nbconnect/releases/tag/v1.1.0
+- **Standalone包**: nbconnect-standalone-v1.1.0.tar.gz (52MB)
+- **下载地址**: https://github.com/cshdotcom/nbconnect/releases/download/v1.1.0/nbconnect-standalone-v1.1.0.tar.gz
+
+### 版本亮点
+v1.1.0 是重大功能更新版本，包含自 v1.0.0 以来的所有迭代改进：
+
+#### 管理后台
+- 概览仪表盘 (KPI计数动画+趋势图+Top应用+最近活动)
+- 系统设置重构 (3分组+单位+重置+封禁检测手动触发)
+- 审核CSV导出
+- 用户详情增强 (信息+统计+活动历史)
+- 用户列表筛选 (角色/状态)
+
+#### 用户端
+- 会话管理
+- 密钥重新生成
+- 多语言代码示例 (cURL/JS/Python/HTML)
+- 应用健康检查
+- 应用使用统计 (7天迷你图表)
+- 统计摘要卡片
+
+#### OAuth/OIDC
+- 授权同意页面安全增强
+- 完整授权码流程
+
+#### 视觉优化
+- 表格斑马纹+颜色编码日志标签
+- KPI卡片可点击导航
+- 移动端响应式
+- CountUp动画
+
+### 发布状态
+- ✅ 源码已推送 main 分支
+- ✅ Tag v1.1.0 已创建
+- ✅ GitHub Release 已创建 (ID: 358509385)
+- ✅ Standalone包已上传 (52MB)
+- ✅ 未覆盖 v1.0.0 (两个版本共存)
