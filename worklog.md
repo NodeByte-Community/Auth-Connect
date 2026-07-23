@@ -930,3 +930,71 @@ chmod +x init-db.sh start.sh
 - ✅ Standalone 包包含所有必要文件
 - ✅ GitHub Release v1.1.0 已更新
 - ✅ 代码已推送 (commit dc26676)
+
+---
+
+## 9个关键Bug修复 (2025-01-23)
+
+### 修复清单
+
+#### 1. 登录后重定向到0.0.0.0
+- **原因**: `req.nextUrl.origin` 在服务器绑定0.0.0.0时返回0.0.0.0
+- **修复**: 新建 `src/lib/url.ts` 的 `getBaseUrl()` 函数
+  - 优先使用 `BASE_URL` 环境变量
+  - 其次使用 `x-forwarded-proto` + `x-forwarded-host` 头
+  - 最后回退到 `localhost:3000`
+- **影响文件**: callback, logout, oauth/authorize
+
+#### 2. 无限刷新循环
+- **原因**: session刷新失败时，page.tsx进入无限重定向循环
+- **修复**: 添加error状态捕获 + redirecting守卫防止重复点击
+- **影响文件**: page.tsx
+
+#### 3. 手机端表格无法滑动
+- **原因**: Radix ScrollArea组件不支持移动端touch滚动
+- **修复**: 4个admin表格的 ScrollArea 替换为原生 `<div className="overflow-auto">`
+- **影响文件**: admin-panel.tsx
+
+#### 4. 不能自动退出登录
+- **原因**: cookie设置了maxAge=720分钟，浏览器关闭后cookie仍存在
+- **修复**: 移除cookie的maxAge，改为session cookie（浏览器关闭即删除）
+- **服务端session仍有过期检查**: SESSION_TIMEOUT_MIN后自动失效
+- **影响文件**: callback route
+
+#### 5. Discourse API无法调用 + 用户级别无法识别
+- **原因**: SSO payload默认不含trust_level，API key为占位符时API调用失败
+- **修复**: 
+  - 检查SSO payload是否包含trust_level字段（部分Discourse配置支持）
+  - API调用添加5秒超时
+  - 失败时trust_level默认为0（不阻塞登录）
+- **影响文件**: callback route, discourse.ts
+
+#### 6. SSO流程验证
+- 完整流程: 登录页 → /api/auth/login → Discourse SSO → /api/auth/callback → 创建session → 重定向到首页
+- 所有重定向使用BASE_URL确保正确跳转
+
+#### 7. 应用logo无法显示
+- **原因**: img标签无onError处理，URL无效时显示破损图标
+- **修复**: 添加onError + imgError状态，失败时显示fallback
+
+#### 8. Logo自动识别
+- **修复**: 当无icon时，从回调URL自动获取favicon
+  - 使用Google favicon服务: `https://www.google.com/s2/favicons?domain=DOMAIN&sz=64`
+  - AppCard: 从第一个callbackUrl获取
+  - ConsentLogo: 从redirect_uri获取
+  - 多级回退: siteLogo > icon > favicon > 图标占位符
+
+#### 9. 站内信验证码输入框
+- **原因**: 输入框仅在codeSent=true时显示，PM发送失败时codeSent保持false
+- **修复**: 
+  - 先显示发送按钮，点击后显示大尺寸验证码输入框
+  - 输入框: text-2xl, tracking-[0.5em], text-center, h-14, inputMode=numeric, autoFocus
+  - 数字过滤: 只允许输入数字
+  - 发送按钮文本动态切换: "发送验证码到站内信" → "重新发送验证码"
+
+### 验证
+- ✅ Lint通过
+- ✅ Build成功
+- ✅ Standalone包已上传 (53MB)
+- ✅ 代码已推送 (commit 771158e)
+- ✅ Release: https://github.com/cshdotcom/nbconnect/releases/tag/v1.1.0
