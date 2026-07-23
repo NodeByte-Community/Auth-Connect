@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * POST /api/apps/[id]/verify
- * Sends a 5-minute verification code to the app owner's Discourse inbox (站内信).
+ * Sends a 5-minute verification code to the app owner's NodeByte inbox (站内信).
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   return NextResponse.json({
     ok: true,
-    message: "验证码已通过 Discourse 站内信发送至您的账号，有效期 5 分钟",
+    message: "验证码已通过 NodeByte 站内信发送至您的账号，有效期 5 分钟",
     expiresIn: 300,
   });
 }

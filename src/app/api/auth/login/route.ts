@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/auth/login
- * Initiates Discourse Connect (SSO) login flow.
+ * Initiates NodeByte SSO login flow.
  * Optional query: ?return_to=<url> - where to go after login (e.g. oauth authorize URL)
  */
 export async function GET(req: NextRequest) {

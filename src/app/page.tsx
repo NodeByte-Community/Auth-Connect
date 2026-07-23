@@ -88,7 +88,7 @@ function LoginPage({ onLogin, redirecting }: { onLogin: () => void; redirecting:
             <span className="text-xl font-black bg-gradient-to-br from-rose-700 via-fuchsia-700 to-teal-700 bg-clip-text text-transparent">C</span>
             <span className="text-xs text-slate-500 font-semibold tracking-[0.3em]">ONNECT · 统一身份认证</span>
           </div>
-          <p className="text-sm text-slate-500 mt-4">基于 Discourse Connect 的统一身份认证系统</p>
+          <p className="text-sm text-slate-500 mt-4">基于 NodeByte SSO 的统一身份认证系统</p>
         </div>
 
         {/* Features badges */}
@@ -100,7 +100,7 @@ function LoginPage({ onLogin, redirecting }: { onLogin: () => void; redirecting:
             <ShieldCheck className="w-3 h-3" /> OAuth 2.0
           </span>
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            <ShieldCheck className="w-3 h-3" /> Discourse SSO
+            <ShieldCheck className="w-3 h-3" /> NodeByte SSO
           </span>
         </div>
 
@@ -123,7 +123,7 @@ function LoginPage({ onLogin, redirecting }: { onLogin: () => void; redirecting:
         </Button>
 
         <p className="text-xs text-slate-400 text-center mt-6">
-          登录后将跳转至 Discourse 社区完成身份验证
+          登录后将跳转至 NodeByte 社区完成身份验证
         </p>
       </Card>
 

@@ -93,7 +93,7 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
       if (!res.ok) {
         toast.error(data.error || "发送失败");
       } else {
-        toast.success(data.message || "验证码已发送至 Discourse 站内信");
+        toast.success(data.message || "验证码已发送至 NodeByte 站内信");
         setCodeSent(true);
       }
     } catch {
@@ -272,7 +272,7 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
                   <div className="flex items-center gap-2 text-teal-700 font-semibold text-sm mb-2">
                     <KeyRound className="w-4 h-4" /> 查看凭据
                   </div>
-                  <p className="text-xs text-teal-600 mb-3">为保护安全，查看 APP ID、密钥和完整调用地址前需验证账号。验证码将通过 Discourse 站内信发送，5 分钟内有效。</p>
+                  <p className="text-xs text-teal-600 mb-3">为保护安全，查看 APP ID、密钥和完整调用地址前需验证账号。验证码将通过 NodeByte 站内信发送，5 分钟内有效。</p>
                   <Button size="sm" onClick={() => setView("verify")}>
                     <ShieldCheck className="w-3.5 h-3.5 mr-1" /> 验证账号查看凭据
                   </Button>
@@ -299,8 +299,8 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
                 <div className="flex items-center gap-2 text-teal-700 font-semibold mb-2">
                   <ShieldCheck className="w-5 h-5" /> 账号验证
                 </div>
-                <p className="text-sm text-teal-700">系统将通过 Discourse 站内信向 <b>{app.name}</b> 的所有者发送一个 5 分钟有效验证码。</p>
-                <p className="text-xs text-teal-600 mt-1">请前往 Discourse 社区 → 个人消息 查看。</p>
+                <p className="text-sm text-teal-700">系统将通过 NodeByte 站内信向 <b>{app.name}</b> 的所有者发送一个 5 分钟有效验证码。</p>
+                <p className="text-xs text-teal-600 mt-1">请前往 NodeByte 社区 → 个人消息 查看。</p>
                 {!codeSent ? (
                   <Button className="mt-3" onClick={sendCode} disabled={verifyLoading}>
                     {verifyLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}

@@ -146,7 +146,7 @@ export function ConnectDashboard() {
 
       <footer className="border-t bg-white mt-auto">
         <div className="max-w-6xl mx-auto px-4 py-4 text-center text-xs text-slate-400">
-          NodeByte Connect · 统一身份认证系统 · 基于 Discourse Connect
+          NodeByte Connect · 统一身份认证系统 · 基于 NodeByte SSO
         </div>
       </footer>
 

@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "NodeByte Connect · 统一身份认证",
-  description: "NodeByte Connect - 基于 Discourse Connect 的统一身份认证系统，支持 OIDC 与 OAuth2 接入。",
-  keywords: ["NodeByte Connect", "SSO", "Discourse Connect", "OIDC", "OAuth2", "身份认证"],
+  description: "NodeByte Connect - 基于 NodeByte SSO 的统一身份认证系统，支持 OIDC 与 OAuth2 接入。",
+  keywords: ["NodeByte Connect", "SSO", "NodeByte SSO", "OIDC", "OAuth2", "身份认证"],
   authors: [{ name: "NodeByte" }],
   icons: {
     icon: "/logo.svg",

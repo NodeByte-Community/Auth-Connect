@@ -1,7 +1,7 @@
 import { createHmac, randomBytes, randomUUID } from "crypto";
 
 /**
- * HMAC-SHA256 signing for Discourse Connect (SSO) protocol.
+ * HMAC-SHA256 signing for NodeByte SSO protocol.
  */
 
 export function signPayload(payload: string, secret: string): string {

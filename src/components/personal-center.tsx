@@ -74,7 +74,7 @@ export function PersonalCenter({ open, onOpenChange, user }: Props) {
               <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">已授权内容</div>
               <div className="rounded-xl border p-4 bg-slate-50">
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  您通过 Discourse 社区账号登录 NodeByte Connect。系统已获取以下授权内容，且无法在本面板更改：
+                  您通过 NodeByte 社区账号登录 NodeByte Connect。系统已获取以下授权内容，且无法在本面板更改：
                 </p>
                 <ul className="mt-2 space-y-1 text-sm text-slate-700">
                   <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-teal-500" />基础身份信息（用户名、邮箱、显示名、头像）</li>
@@ -82,7 +82,7 @@ export function PersonalCenter({ open, onOpenChange, user }: Props) {
                   <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-teal-500" />管理员 / 版主标识</li>
                   <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-teal-500" />社区用户唯一 ID</li>
                 </ul>
-                <p className="mt-3 text-xs text-slate-400">如需修改以上信息，请前往 Discourse 社区个人设置中更改。</p>
+                <p className="mt-3 text-xs text-slate-400">如需修改以上信息，请前往 NodeByte 社区个人设置中更改。</p>
               </div>
             </div>
 

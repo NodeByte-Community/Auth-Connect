@@ -276,7 +276,7 @@ function OverviewTab() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatusItem label="OAuth2 端点" ok />
           <StatusItem label="OIDC Discovery" ok />
-          <StatusItem label="Discourse API" ok={stats.appCounts.total > 0} />
+          <StatusItem label="NodeByte API" ok={stats.appCounts.total > 0} />
           <StatusItem label="封禁检测 Cron" ok warning />
         </div>
       </Card>
@@ -1058,7 +1058,7 @@ function SettingsTab() {
 
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500 space-y-1">
           <div>封禁用户自动检查：每 <b>{process.env.NEXT_PUBLIC_BANNED_CHECK || 5}</b> 分钟执行一次（由 Cron 定时任务触发 /api/cron/check-banned）</div>
-          <div>系统将通过 Discourse API 批量获取用户状态列表（非逐个查询），自动停用封禁用户的所有应用并清理会话。</div>
+          <div>系统将通过 NodeByte API 批量获取用户状态列表（非逐个查询），自动停用封禁用户的所有应用并清理会话。</div>
         </div>
 
         <Button onClick={update} disabled={saving}>
