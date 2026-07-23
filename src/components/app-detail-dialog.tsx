@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Copy, KeyRound, Trash2, Loader2, ShieldCheck, Pencil, RefreshCw, ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Copy, KeyRound, Trash2, Loader2, ShieldCheck, Pencil, RefreshCw, ExternalLink, AlertTriangle, CheckCircle2, Code } from "lucide-react";
 
 interface AppItem {
   id: string;
@@ -50,6 +50,7 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [credentials, setCredentials] = useState<any>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [usage, setUsage] = useState<{ totalTokens: number; activeTokens: number; lastUsedAt: string | null } | null>(null);
 
   // edit state
   const [editName, setEditName] = useState("");
@@ -67,12 +68,18 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
       setCode("");
       setCredentials(null);
       setDeleteConfirm(false);
+      setUsage(null);
       setEditName(app.name);
       setEditIcon(app.icon || "");
       setEditDescription(app.description);
       setEditType(app.type);
       setEditCallbackUrls(app.callbackUrls);
       setEditSiteLogo(app.siteLogo || "");
+      // Fetch usage stats
+      fetch(`/api/apps/${app.id}`)
+        .then((r) => r.json())
+        .then((data) => { if (data.usage) setUsage(data.usage); })
+        .catch(() => {});
     }
   }, [open, app]);
 
@@ -218,6 +225,26 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
                 <div className="rounded-lg border p-3 text-sm text-slate-700 whitespace-pre-wrap">{app.description}</div>
               </div>
 
+              {/* Usage stats */}
+              {usage && (
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-lg border p-3 text-center bg-gradient-to-br from-teal-50 to-emerald-50">
+                    <div className="text-2xl font-black text-teal-700">{usage.totalTokens}</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">Token 签发总数</div>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center bg-gradient-to-br from-amber-50 to-orange-50">
+                    <div className="text-2xl font-black text-amber-700">{usage.activeTokens}</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">活跃 Token</div>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center bg-gradient-to-br from-fuchsia-50 to-purple-50">
+                    <div className="text-xs font-bold text-fuchsia-700 leading-tight pt-1">
+                      {usage.lastUsedAt ? new Date(usage.lastUsedAt).toLocaleDateString("zh-CN") : "从未使用"}
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">最近使用</div>
+                  </div>
+                </div>
+              )}
+
               {app.status === "approved" && (
                 <div className="rounded-lg border border-teal-200 bg-teal-50 p-3">
                   <div className="flex items-center gap-2 text-teal-700 font-semibold text-sm mb-2">
@@ -292,6 +319,38 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
                   </ScrollArea>
                 <Button size="sm" variant="outline" onClick={() => copy(JSON.stringify(credentials.endpoints, null, 2), "调用地址")} className="mt-1">
                   <Copy className="w-3.5 h-3.5 mr-1" /> 复制全部地址
+                </Button>
+              </div>
+
+              {/* Quick start integration code */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1"><Code className="w-3.5 h-3.5" /> 快速接入代码示例</Label>
+                <ScrollArea className="h-44 rounded-lg border bg-slate-950 p-3">
+                  <pre className="text-[11px] text-slate-300 font-mono whitespace-pre-wrap break-all leading-relaxed">
+{`<!-- 1. 引导用户授权 -->
+<a href="${credentials.endpoints.authorize}?response_type=code
+  &client_id=${credentials.appId}
+  &redirect_uri=YOUR_CALLBACK
+  &scope=${credentials.scopes.replace(/\s+/g, "+")}
+  &state=RANDOM_STATE">
+  使用 NodeByte 登录
+</a>
+
+<!-- 2. 回调接收 code，交换 token -->
+curl -X POST ${credentials.endpoints.token} \\
+  -d "grant_type=authorization_code" \\
+  -d "client_id=${credentials.appId}" \\
+  -d "client_secret=YOUR_SECRET" \\
+  -d "code=AUTH_CODE" \\
+  -d "redirect_uri=YOUR_CALLBACK"
+
+<!-- 3. 获取用户信息 -->
+curl ${credentials.endpoints.userinfo} \\
+  -H "Authorization: Bearer ACCESS_TOKEN"`}
+                  </pre>
+                </ScrollArea>
+                <Button size="sm" variant="outline" onClick={() => copy(`授权: ${credentials.endpoints.authorize}\nToken: ${credentials.endpoints.token}\nUserInfo: ${credentials.endpoints.userinfo}\n\nClient ID: ${credentials.appId}\nScopes: ${credentials.scopes}`, "接入代码")}>
+                  <Copy className="w-3.5 h-3.5 mr-1" /> 复制接入说明
                 </Button>
               </div>
 

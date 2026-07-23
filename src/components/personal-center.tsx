@@ -15,6 +15,13 @@ interface Props {
 
 const trustLevelNames = ["新用户", "基本用户", "成员", "活跃用户", "领导者"];
 
+function getInitials(username: string): string {
+  const clean = username.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "");
+  if (!clean) return "?";
+  if (/[\u4e00-\u9fa5]/.test(clean[0])) return clean.slice(0, 1);
+  return clean[0].toUpperCase();
+}
+
 export function PersonalCenter({ open, onOpenChange, user }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -31,8 +38,8 @@ export function PersonalCenter({ open, onOpenChange, user }: Props) {
             <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-teal-50 to-amber-50 border">
               <Avatar className="h-16 w-16 border-2 border-white shadow">
                 {user.avatarUrl ? <AvatarImage src={user.avatarUrl} /> : null}
-                <AvatarFallback className="bg-gradient-to-br from-teal-400 to-emerald-500 text-white font-bold">
-                  {user.username.slice(0, 2).toUpperCase()}
+                <AvatarFallback className="bg-gradient-to-br from-teal-500 via-emerald-500 to-cyan-600 text-white font-bold">
+                  {getInitials(user.username)}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">

@@ -12,6 +12,19 @@ interface Props {
 
 const trustLevelNames = ["新用户", "基本用户", "成员", "活跃用户", "领导者"];
 
+/**
+ * Get user initials for avatar fallback.
+ * Uses first character of the username (cleaned), uppercase.
+ * For Chinese names, uses first character.
+ */
+function getInitials(username: string): string {
+  const clean = username.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "");
+  if (!clean) return "?";
+  // If starts with Chinese, take first char; otherwise take first letter uppercased
+  if (/[\u4e00-\u9fa5]/.test(clean[0])) return clean.slice(0, 1);
+  return clean[0].toUpperCase();
+}
+
 function levelColor(lv: number) {
   return [
     "from-slate-400 to-slate-500",
@@ -36,14 +49,14 @@ export function ConnectBanner({ user, onAvatarClick }: Props) {
       {/* Artistic title - left/center */}
       <div className="absolute inset-0 flex items-center px-6 sm:px-10">
         <div className="flex flex-col gap-1 select-none">
-          <h1 className="font-black tracking-tight leading-none text-4xl sm:text-5xl md:text-6xl">
-            <span className="inline-block bg-gradient-to-r from-rose-500 via-fuchsia-500 to-purple-500 bg-clip-text text-transparent">Node</span>
-            <span className="inline-block bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 bg-clip-text text-transparent">Byte</span>
-            <span className="inline-block ml-2 sm:ml-3 bg-gradient-to-r from-teal-500 via-emerald-500 to-cyan-500 bg-clip-text text-transparent">Connect</span>
+          <h1 className="font-black tracking-tight leading-none text-4xl sm:text-5xl md:text-6xl drop-shadow-sm">
+            <span className="inline-block bg-gradient-to-r from-rose-600 via-fuchsia-600 to-purple-600 bg-clip-text text-transparent">Node</span>
+            <span className="inline-block bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 bg-clip-text text-transparent">Byte</span>
+            <span className="inline-block ml-2 sm:ml-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 bg-clip-text text-transparent">Connect</span>
           </h1>
           <div className="flex items-center gap-2">
-            <span className="text-2xl sm:text-3xl md:text-4xl font-black bg-gradient-to-br from-rose-600 via-fuchsia-600 to-teal-600 bg-clip-text text-transparent">C</span>
-            <span className="text-[10px] sm:text-xs text-slate-500 font-medium tracking-widest">ONNECT · 统一身份认证</span>
+            <span className="text-2xl sm:text-3xl md:text-4xl font-black bg-gradient-to-br from-rose-700 via-fuchsia-700 to-teal-700 bg-clip-text text-transparent">C</span>
+            <span className="text-[10px] sm:text-xs text-slate-600 font-semibold tracking-widest">ONNECT · 统一身份认证</span>
           </div>
         </div>
       </div>
@@ -72,8 +85,8 @@ export function ConnectBanner({ user, onAvatarClick }: Props) {
         >
           <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-white">
             {user.avatarUrl ? <AvatarImage src={user.avatarUrl} alt={user.username} /> : null}
-            <AvatarFallback className="bg-gradient-to-br from-teal-400 to-emerald-500 text-white font-bold text-xl">
-              {user.username.slice(0, 2).toUpperCase()}
+            <AvatarFallback className="bg-gradient-to-br from-teal-500 via-emerald-500 to-cyan-600 text-white font-bold text-xl">
+              {getInitials(user.username)}
             </AvatarFallback>
           </Avatar>
           <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">

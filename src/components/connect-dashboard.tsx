@@ -7,11 +7,12 @@ import { ConnectBanner } from "@/components/connect-banner";
 import { PersonalCenter } from "@/components/personal-center";
 import { ApplyAppDialog } from "@/components/apply-app-dialog";
 import { AppDetailDialog } from "@/components/app-detail-dialog";
+import { SessionManager } from "@/components/session-manager";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { LogOut, UserCircle, Plus, Shield, RefreshCw, Loader2, ExternalLink, AlertCircle } from "lucide-react";
+import { LogOut, UserCircle, Plus, Shield, RefreshCw, Loader2, ExternalLink, AlertCircle, MonitorSmartphone } from "lucide-react";
 
 interface AppItem {
   id: string;
@@ -33,6 +34,7 @@ export function ConnectDashboard() {
   const { user, pendingAuthorize, refreshSession } = useAppStore();
   const [pcOpen, setPcOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
+  const [sessionOpen, setSessionOpen] = useState(false);
   const [apps, setApps] = useState<AppItem[]>([]);
   const [loadingApps, setLoadingApps] = useState(true);
   const [selectedApp, setSelectedApp] = useState<AppItem | null>(null);
@@ -91,6 +93,9 @@ export function ConnectDashboard() {
             <Button variant="outline" onClick={() => setPcOpen(true)}>
               <UserCircle className="w-4 h-4 mr-1" /> 个人中心
             </Button>
+            <Button variant="outline" onClick={() => setSessionOpen(true)}>
+              <MonitorSmartphone className="w-4 h-4 mr-1" /> 会话管理
+            </Button>
             <Button variant="outline" className="text-rose-600 hover:text-rose-700" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-1" /> 退出登录
             </Button>
@@ -148,35 +153,38 @@ export function ConnectDashboard() {
       <PersonalCenter open={pcOpen} onOpenChange={setPcOpen} user={user} />
       <ApplyAppDialog open={applyOpen} onOpenChange={setApplyOpen} onCreated={fetchApps} trustLevel={user.trustLevel} minTrustLevel={minTrustLevel} />
       <AppDetailDialog app={selectedApp} open={detailOpen} onOpenChange={setDetailOpen} onUpdated={fetchApps} onDeleted={fetchApps} />
+      <SessionManager open={sessionOpen} onOpenChange={setSessionOpen} />
     </div>
   );
 }
 
 function AppCard({ app, onClick }: { app: AppItem; onClick: () => void }) {
-  const statusMap: Record<string, { label: string; cls: string; dot: string }> = {
-    pending: { label: "待审核", cls: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
-    pending_re_review: { label: "待复审", cls: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
-    approved: { label: "已通过", cls: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-    rejected: { label: "已拒绝", cls: "bg-rose-50 text-rose-700 border-rose-200", dot: "bg-rose-500" },
-    disabled: { label: "已停用", cls: "bg-slate-100 text-slate-500 border-slate-200", dot: "bg-slate-400" },
+  const statusMap: Record<string, { label: string; cls: string; dot: string; accent: string }> = {
+    pending: { label: "待审核", cls: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500", accent: "from-amber-400 to-orange-400" },
+    pending_re_review: { label: "待复审", cls: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500", accent: "from-amber-400 to-orange-400" },
+    approved: { label: "已通过", cls: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500", accent: "from-emerald-400 to-teal-400" },
+    rejected: { label: "已拒绝", cls: "bg-rose-50 text-rose-700 border-rose-200", dot: "bg-rose-500", accent: "from-rose-400 to-fuchsia-400" },
+    disabled: { label: "已停用", cls: "bg-slate-100 text-slate-500 border-slate-200", dot: "bg-slate-400", accent: "from-slate-300 to-slate-400" },
   };
   const st = statusMap[app.status] || statusMap.pending;
 
   return (
-    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer group" onClick={onClick}>
-      <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-lg bg-slate-50 border flex items-center justify-center overflow-hidden shrink-0">
-          {app.icon ? <img src={app.icon} alt="" className="w-full h-full object-contain" /> : <ExternalLink className="w-5 h-5 text-slate-300" />}
+    <Card className={`p-4 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden border-l-0`} onClick={onClick}>
+      {/* Left accent bar */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${st.accent}`} />
+      <div className="flex items-start gap-3 pl-2">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border flex items-center justify-center overflow-hidden shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+          {app.icon ? <img src={app.icon} alt="" className="w-full h-full object-contain" /> : <ExternalLink className="w-5 h-5 text-slate-400" />}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-slate-800 truncate">{app.name}</span>
+            <span className="font-semibold text-slate-800 truncate group-hover:text-teal-700 transition-colors">{app.name}</span>
             <Badge variant="outline" className={`text-xs ${st.cls}`}><span className={`w-1.5 h-1.5 rounded-full ${st.dot} mr-1`} />{st.label}</Badge>
           </div>
           <p className="text-xs text-slate-500 mt-1 line-clamp-2">{app.description}</p>
           <div className="flex items-center gap-2 mt-2">
-            <Badge variant="secondary" className="text-[10px] uppercase">{app.type}</Badge>
-            <span className="text-[10px] text-slate-400 font-mono">{app.appId}</span>
+            <Badge variant="secondary" className="text-[10px] uppercase font-mono">{app.type}</Badge>
+            <span className="text-[10px] text-slate-500 font-mono truncate">{app.appId}</span>
           </div>
         </div>
       </div>

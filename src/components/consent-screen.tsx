@@ -133,16 +133,16 @@ export function ConsentScreen() {
             })}
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-400 mb-4">
-            <Lock className="w-3 h-3" />
-            授权后将跳转至 {new URL(redirect_uri).hostname}
+          <div className="flex items-center gap-2 text-xs text-slate-600 mb-4 p-2 rounded-lg bg-slate-50 border">
+            <Lock className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+            <span>授权后将跳转至 <span className="font-mono font-semibold text-slate-800">{new URL(redirect_uri).hostname}</span></span>
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={() => handleAction("deny")} disabled={submitting}>
+            <Button variant="outline" className="flex-1 h-11" onClick={() => handleAction("deny")} disabled={submitting}>
               <X className="w-4 h-4 mr-1" /> 拒绝
             </Button>
-            <Button className="flex-1 bg-teal-600 hover:bg-teal-700" onClick={() => handleAction("approve")} disabled={submitting}>
+            <Button className="flex-1 h-11 bg-teal-600 hover:bg-teal-700" onClick={() => handleAction("approve")} disabled={submitting}>
               {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
               同意授权
             </Button>

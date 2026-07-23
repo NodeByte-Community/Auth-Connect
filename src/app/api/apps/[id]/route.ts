@@ -20,8 +20,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   });
   if (!app) return NextResponse.json({ error: "应用不存在" }, { status: 404 });
 
+  // Usage stats: token issuance count + last used
+  const [tokenCount, activeTokens, lastToken] = await Promise.all([
+    db.accessToken.count({ where: { appId: app.id } }),
+    db.accessToken.count({ where: { appId: app.id, expiresAt: { gt: new Date() } } }),
+    db.accessToken.findFirst({ where: { appId: app.id }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
+  ]);
+
   const settings = await getSettings();
-  return NextResponse.json({ app, settings });
+  return NextResponse.json({
+    app,
+    settings,
+    usage: {
+      totalTokens: tokenCount,
+      activeTokens,
+      lastUsedAt: lastToken?.createdAt || null,
+    },
+  });
 }
 
 /**

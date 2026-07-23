@@ -6,9 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { RefreshCw, Loader2, Plus, Image as ImageIcon } from "lucide-react";
+import { RefreshCw, Loader2, Plus, Image as ImageIcon, Info, ShieldCheck, KeyRound, Settings, MessageSquare } from "lucide-react";
+
+function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
+  return (
+    <div className="flex items-center gap-2 pt-2">
+      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+        <span className="text-teal-600">{icon}</span>
+        {title}
+      </div>
+      <div className="flex-1 h-px bg-slate-100" />
+    </div>
+  );
+}
 
 interface Props {
   open: boolean;
@@ -98,13 +109,15 @@ export function ApplyAppDialog({ open, onOpenChange, onCreated, trustLevel, minT
           </DialogTitle>
         </DialogHeader>
 
-        <div className="overflow-y-auto pr-2 space-y-4 flex-1">
+        <div className="overflow-y-auto pr-2 space-y-5 flex-1">
           {trustLevel < minTrustLevel && (
             <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
               您当前的社区等级为 Trust Level {trustLevel}，未达到最低要求 Trust Level {minTrustLevel}，无法申请应用。
             </div>
           )}
 
+          {/* Section: 基础信息 */}
+          <SectionTitle icon={<Info className="w-3.5 h-3.5" />} title="基础信息" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>应用名称 *</Label>
@@ -112,21 +125,38 @@ export function ApplyAppDialog({ open, onOpenChange, onCreated, trustLevel, minT
             </div>
             <div className="space-y-1.5">
               <Label>应用类型 *</Label>
-              <RadioGroup value={type} onValueChange={setType} className="flex gap-4 pt-2">
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="oidc" id="t-oidc" />
-                  <Label htmlFor="t-oidc" className="cursor-pointer font-normal">OIDC</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="oauth2" id="t-oauth2" />
-                  <Label htmlFor="t-oauth2" className="cursor-pointer font-normal">OAuth 2.0</Label>
-                </div>
-              </RadioGroup>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setType("oidc")}
+                  className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border-2 transition-all ${type === "oidc" ? "border-teal-500 bg-teal-50 text-teal-700" : "border-slate-200 hover:border-slate-300 text-slate-600"}`}
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                  <span className="text-xs font-semibold">OIDC</span>
+                  <span className="text-[10px] opacity-70">OpenID Connect</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setType("oauth2")}
+                  className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border-2 transition-all ${type === "oauth2" ? "border-fuchsia-500 bg-fuchsia-50 text-fuchsia-700" : "border-slate-200 hover:border-slate-300 text-slate-600"}`}
+                >
+                  <KeyRound className="w-5 h-5" />
+                  <span className="text-xs font-semibold">OAuth 2.0</span>
+                  <span className="text-[10px] opacity-70">标准授权</span>
+                </button>
+              </div>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label>应用图标 URL（可在线预览）</Label>
+            <Label>应用描述 *</Label>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="简要描述应用用途..." rows={3} maxLength={2000} />
+          </div>
+
+          {/* Section: 品牌外观 */}
+          <SectionTitle icon={<ImageIcon className="w-3.5 h-3.5" />} title="品牌与外观" />
+          <div className="space-y-1.5">
+            <Label>应用图标 URL <span className="text-xs text-slate-400 font-normal">（可在线预览）</span></Label>
             <div className="flex gap-2 items-start">
               <Input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="https://example.com/logo.png" />
               {icon && (
@@ -139,21 +169,20 @@ export function ApplyAppDialog({ open, onOpenChange, onCreated, trustLevel, minT
           </div>
 
           <div className="space-y-1.5">
-            <Label>站点 LOGO URL（授权页面展示，建议正方形）</Label>
+            <Label>站点 LOGO URL <span className="text-xs text-slate-400 font-normal">（授权页面展示，建议正方形）</span></Label>
             <Input value={siteLogo} onChange={(e) => setSiteLogo(e.target.value)} placeholder="https://example.com/site-logo.png" />
           </div>
 
-          <div className="space-y-1.5">
-            <Label>应用描述 *</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="简要描述应用用途..." rows={3} maxLength={2000} />
-          </div>
-
+          {/* Section: 技术配置 */}
+          <SectionTitle icon={<Settings className="w-3.5 h-3.5" />} title="技术配置" />
           <div className="space-y-1.5">
             <Label>回调地址（一行一个，必须 HTTPS）*</Label>
             <Textarea value={callbackUrls} onChange={(e) => setCallbackUrls(e.target.value)} placeholder={"https://example.com/auth/callback\nhttps://example.com/auth/callback2"} rows={3} />
-            <p className="text-xs text-slate-400">授权成功后会将 code 重定向到此处，本地开发可用 http://localhost</p>
+            <p className="text-xs text-slate-500 flex items-center gap-1"><Info className="w-3 h-3" /> 授权成功后会将 code 重定向到此处，本地开发可用 http://localhost</p>
           </div>
 
+          {/* Section: 审核 */}
+          <SectionTitle icon={<MessageSquare className="w-3.5 h-3.5" />} title="审核信息" />
           <div className="space-y-1.5">
             <Label>申请理由 *</Label>
             <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="为什么需要接入此系统..." rows={2} maxLength={500} />
@@ -162,8 +191,16 @@ export function ApplyAppDialog({ open, onOpenChange, onCreated, trustLevel, minT
           {/* Captcha */}
           <div className="space-y-1.5">
             <Label>人机验证 *</Label>
-            <div className="rounded-lg border p-3 bg-slate-50 space-y-2">
-              {loadingCaptcha && <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin" /> 加载中...</div>}
+            <div className="rounded-lg border p-3 bg-slate-50 space-y-2 min-h-[80px]">
+              {loadingCaptcha && (
+                <div className="space-y-2">
+                  <div className="h-10 bg-slate-200 rounded animate-pulse" />
+                  <div className="h-8 bg-slate-200 rounded animate-pulse w-2/3" />
+                </div>
+              )}
+              {!loadingCaptcha && !captcha && (
+                <div className="text-sm text-slate-400 text-center py-2">验证码加载失败</div>
+              )}
               {captcha && !loadingCaptcha && (
                 <>
                   {captcha.type === "svg" ? (
