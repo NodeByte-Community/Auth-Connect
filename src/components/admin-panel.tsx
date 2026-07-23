@@ -228,16 +228,16 @@ function OverviewTab() {
           ) : (
             <div className="space-y-2">
               {stats.topApps.map((a: any, i: number) => (
-                <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${i === 0 ? "bg-amber-500" : i === 1 ? "bg-slate-400" : i === 2 ? "bg-orange-400" : "bg-slate-300"}`}>{i + 1}</span>
+                <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 overflow-hidden">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${i === 0 ? "bg-amber-500" : i === 1 ? "bg-slate-400" : i === 2 ? "bg-orange-400" : "bg-slate-300"}`}>{i + 1}</span>
                   <div className="w-8 h-8 rounded bg-slate-50 border flex items-center justify-center overflow-hidden shrink-0">
                     {a.icon ? <img src={a.icon} className="w-full h-full object-contain" alt="" /> : <ImageIcon className="w-4 h-4 text-slate-300" />}
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 overflow-hidden">
                     <div className="text-sm font-medium truncate">{a.name}</div>
-                    <div className="text-xs text-slate-600 font-mono">{a.appId}</div>
+                    <div className="text-xs text-slate-600 font-mono truncate">{a.appId}</div>
                   </div>
-                  <Badge variant="secondary" className="text-xs">{a.count} 次</Badge>
+                  <Badge variant="secondary" className="text-xs shrink-0">{a.count} 次</Badge>
                 </div>
               ))}
             </div>

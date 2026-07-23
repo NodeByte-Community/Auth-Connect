@@ -88,26 +88,26 @@ export function ConnectDashboard() {
         <ConnectBanner user={user} onAvatarClick={handleAvatarClick} />
 
         {/* Action buttons */}
-        <div className="flex flex-wrap gap-2 items-center justify-between">
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setPcOpen(true)}>
-              <UserCircle className="w-4 h-4 mr-1" /> 个人中心
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPcOpen(true)} className="flex-1 sm:flex-none justify-center">
+              <UserCircle className="w-4 h-4 sm:mr-1" /> <span className="sm:inline">个人中心</span>
             </Button>
-            <Button variant="outline" onClick={() => setSessionOpen(true)}>
-              <MonitorSmartphone className="w-4 h-4 mr-1" /> 会话管理
+            <Button variant="outline" size="sm" onClick={() => setSessionOpen(true)} className="flex-1 sm:flex-none justify-center">
+              <MonitorSmartphone className="w-4 h-4 sm:mr-1" /> <span className="sm:inline">会话</span>
             </Button>
-            <Button variant="outline" className="text-rose-600 hover:text-rose-700" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-1" /> 退出登录
+            <Button variant="outline" size="sm" className="text-rose-600 hover:text-rose-700 flex-1 sm:flex-none justify-center" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 sm:mr-1" /> <span className="sm:inline">退出</span>
             </Button>
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center">
             {user.isAdmin && (
-              <Button variant="outline" onClick={() => router.push("/?admin=1")}>
-                <Shield className="w-4 h-4 mr-1" /> 后台管理
+              <Button variant="outline" size="sm" onClick={() => router.push("/?admin=1")} className="flex-1 sm:flex-none justify-center">
+                <Shield className="w-4 h-4 sm:mr-1" /> <span className="sm:inline">后台</span>
               </Button>
             )}
-            <Button onClick={() => setApplyOpen(true)}>
-              <Plus className="w-4 h-4 mr-1" /> 申请应用
+            <Button size="sm" onClick={() => setApplyOpen(true)} className="flex-1 sm:flex-none justify-center">
+              <Plus className="w-4 h-4 sm:mr-1" /> <span className="sm:inline">申请应用</span>
             </Button>
             <Button variant="ghost" size="icon" onClick={fetchApps}><RefreshCw className="w-4 h-4" /></Button>
           </div>
@@ -176,15 +176,15 @@ function AppCard({ app, onClick }: { app: AppItem; onClick: () => void }) {
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border flex items-center justify-center overflow-hidden shrink-0 shadow-sm group-hover:scale-105 transition-transform">
           {app.icon ? <img src={app.icon} alt="" className="w-full h-full object-contain" /> : <ExternalLink className="w-5 h-5 text-slate-400" />}
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 overflow-hidden">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-slate-800 truncate group-hover:text-teal-700 transition-colors">{app.name}</span>
-            <Badge variant="outline" className={`text-xs ${st.cls}`}><span className={`w-1.5 h-1.5 rounded-full ${st.dot} mr-1`} />{st.label}</Badge>
+            <Badge variant="outline" className={`text-xs shrink-0 ${st.cls}`}><span className={`w-1.5 h-1.5 rounded-full ${st.dot} mr-1`} />{st.label}</Badge>
           </div>
           <p className="text-xs text-slate-500 mt-1 line-clamp-2">{app.description}</p>
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant="secondary" className="text-[10px] uppercase font-mono">{app.type}</Badge>
-            <span className="text-[10px] text-slate-500 font-mono truncate">{app.appId}</span>
+          <div className="flex items-center gap-2 mt-2 min-w-0">
+            <Badge variant="secondary" className="text-[10px] uppercase font-mono shrink-0">{app.type}</Badge>
+            <span className="text-[10px] text-slate-500 font-mono truncate min-w-0">{app.appId}</span>
           </div>
         </div>
       </div>
