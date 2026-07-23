@@ -93,13 +93,8 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
       if (!res.ok) {
         toast.error(data.error || "发送失败");
       } else {
-        toast.success(data.message || "验证码已发送");
+        toast.success(data.message || "验证码已发送至 Discourse 站内信");
         setCodeSent(true);
-        if (data.devCode) {
-          // Dev mode: auto-fill the code for testing
-          setCode(data.devCode);
-          toast.info(`开发模式验证码: ${data.devCode}`, { duration: 8000 });
-        }
       }
     } catch {
       toast.error("网络错误");
@@ -601,6 +596,60 @@ if (code) {
       <Button size="sm" variant="outline" onClick={() => onCopy(examples[lang], `${lang} 代码`)}>
         <Copy className="w-3.5 h-3.5 mr-1" /> 复制 {lang === "javascript" ? "JS" : lang === "python" ? "Python" : lang === "html" ? "HTML" : "cURL"} 代码
       </Button>
+    </div>
+  );
+}
+
+function HealthCheck({ appId }: { appId: string }) {
+  const [results, setResults] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const runCheck = async () => {
+    setLoading(true);
+    setResults(null);
+    try {
+      const res = await fetch(`/api/apps/${appId}/health-check`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "检查失败");
+      } else {
+        setResults(data.results);
+      }
+    } catch {
+      toast.error("网络错误");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border border-sky-200 bg-sky-50 p-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-sky-700 font-semibold text-sm">
+            <HeartPulse className="w-4 h-4" /> 回调地址健康检查
+          </div>
+          <p className="text-xs text-sky-600 mt-1">测试回调地址是否可达（5s 超时，HEAD/GET 请求）</p>
+        </div>
+        <Button size="sm" variant="outline" className="text-sky-700 border-sky-300 hover:bg-sky-100 shrink-0" onClick={runCheck} disabled={loading}>
+          {loading ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <HeartPulse className="w-3.5 h-3.5 mr-1" />}
+          {loading ? "检查中..." : "开始检查"}
+        </Button>
+      </div>
+      {results && (
+        <div className="mt-3 space-y-1.5">
+          {results.map((r: any, i: number) => (
+            <div key={i} className={`flex items-center gap-2 p-2 rounded-lg border text-xs ${r.ok ? "border-emerald-200 bg-emerald-50" : "border-rose-200 bg-rose-50"}`}>
+              {r.ok ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <X className="w-3.5 h-3.5 text-rose-600 shrink-0" />}
+              <span className="font-mono text-slate-600 truncate flex-1 min-w-0">{r.url}</span>
+              <Badge variant="outline" className={`shrink-0 ${r.ok ? "text-emerald-700" : "text-rose-700"}`}>
+                {r.ok ? `HTTP ${r.status}` : (r.error || `HTTP ${r.status}`)}
+              </Badge>
+              {r.responseTimeMs != null && <span className="text-slate-400 shrink-0">{r.responseTimeMs}ms</span>}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

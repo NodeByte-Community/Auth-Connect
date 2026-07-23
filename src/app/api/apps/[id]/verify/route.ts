@@ -44,17 +44,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   );
 
   if (!result.success) {
-    // Dev fallback: if PM fails AND we're in dev mode (placeholder secret), return code directly for testing
-    const isDev = (process.env.DISCOURSE_CONNECT_SECRET || "") === "CHANGE_ME_TO_YOUR_SSO_SECRET";
-    if (isDev) {
-      await logAction({ userId: session.user.id, action: "APP_VERIFY_SEND_DEV", details: `App: ${app.name}, code returned in dev mode` });
-      return NextResponse.json({
-        ok: true,
-        message: "验证码已发送（开发模式：Discourse 站内信未配置，验证码已直接返回）",
-        expiresIn: 300,
-        devCode: code,
-      });
-    }
     return NextResponse.json({ error: "验证码发送失败，请稍后重试: " + (result.error || "") }, { status: 500 });
   }
 

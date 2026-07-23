@@ -164,3 +164,84 @@ NodeByte Connect 是一个基于 Discourse Connect 的统一身份认证 (SSO) �
 6. 应用健康检查（定期 ping 回调地址）
 7. 暗黑模式支持
 8. 国际化 (i18n) 中英文切换
+
+---
+
+## 第三轮迭代 (2025-01-23) — 关闭开发模式 + 登录页重构 + 功能完善
+
+### 项目当前状态描述
+用户要求：关闭开发模式与测试模式，登录界面仅显示登录按钮与品牌，管理员与用户共用同一登录按钮，登录后检查是否管理员自动显示后台按钮。同时完成上一轮遗留的 HealthCheck 组件和密钥重新生成功能。
+
+### 当前目标 / 已完成的修改 / 验证结果
+
+#### 关闭开发模式
+1. **.env** — `NEXT_PUBLIC_DEV_MODE=false`
+2. **删除 dev-login 路由** — `src/app/api/auth/dev-login/` 完全移除
+3. **移除 verify route 的 dev fallback** — 不再在 PM 发送失败时返回验证码，直接报错
+4. **移除 app-detail-dialog 的 devCode 自动填充** — 验证码必须用户手动从 Discourse 站内信获取
+
+#### 登录页重构（page.tsx）
+- 移除 DevLoginPage 组件
+- 未登录用户看到**品牌登录页**：渐变背景 + 品牌Logo + "NodeByte Connect" 艺术字 + OIDC/OAuth2/Discourse SSO 标签
+- **单一登录按钮**"使用社区账号登录"，不区分管理员/用户
+- 点击后跳转 `/api/auth/login` → Discourse SSO
+- 登录成功后回调，系统根据 Discourse 返回的 admin/trust_level/group 自动判断是否管理员
+
+#### 管理员自动识别（已验证）
+- 登录回调 `/api/auth/callback` 中检查：
+  - Discourse 返回的 `admin=true` → isAdmin
+  - trust_level >= ADMIN_TRUST_LEVEL (默认4) → isAdmin
+  - 属于 ADMIN_GROUP_NAME (默认 admins) 用户组 → isAdmin
+- Dashboard 中后台按钮：`{user.isAdmin && <Button>后台</Button>}` — 仅管理员可见
+- 普通用户访问 `/?admin=1` → 自动重定向到普通仪表盘（不显示管理后台）
+
+#### 新功能（完成上一轮遗留）
+1. **HealthCheck 组件** (`src/components/app-detail-dialog.tsx`)
+   - 应用详情中"回调地址健康检查"区块
+   - 点击"开始检查"对每个回调 URL 发 HEAD/GET 请求（5s 超时）
+   - 显示 HTTP 状态码、响应时间、成功/失败标识
+   - API: `POST /api/apps/[id]/health-check`
+2. **密钥重新生成** (`src/app/api/apps/[id]/regenerate-secret/`)
+   - 凭据查看页显示"重新生成密钥"按钮（amber 警告色）
+   - 需验证码确认（复用验证流程）
+   - 生成新密钥 + 撤销所有已签发 access token
+   - 用户需重新授权
+3. **多语言代码示例** (CodeExamples 组件)
+   - 凭据页显示 4 种语言 Tab：cURL / JS / Python / HTML
+   - 每种语言完整 3 步接入示例（授权/Token交换/UserInfo）
+   - 可单独复制
+
+#### Bug 修复
+1. **Top 5 apps 头像溢出** — 添加 `overflow-hidden` + `shrink-0` + `truncate`
+2. **移动端横幅文字溢出** — 重构 banner 为 flexbox 布局，标题自适应字号 (text-3xl sm:text-5xl)
+3. **移动端按钮换行错位** — 改用 grid grid-cols-2 布局，按钮 size="sm"
+4. **App ID 移动端溢出** — 添加 `overflow-hidden` + `min-w-0` + `truncate`
+5. **DialogContent accessibility warning** — `aria-describedby={undefined}` 移到 `{...props}` 之后避免被覆盖
+
+#### 验证结果
+- ✅ Lint 全部通过
+- ✅ Dev server HTTP 200
+- ✅ 登录页：仅品牌 + 单一登录按钮，无管理员/用户区分
+- ✅ 管理员登录后显示"后台"按钮，普通用户不显示
+- ✅ 普通用户访问 /?admin=1 被重定向到普通仪表盘
+- ✅ 管理后台 6 标签页正常（概览/应用/审核/用户/日志/设置）
+- ✅ 应用列表显示 ISO 8601 日期格式
+- ✅ 健康检查功能正常（API 返回 200）
+- ✅ OAuth 授权流程完整（authorize → consent → code → callback）
+- ✅ DialogContent warning 已消除
+- ✅ 移动端响应式良好（无溢出）
+- ✅ VLM 视觉确认登录页合规
+
+### 未解决问题或风险
+1. **Discourse 未配置真实凭据** — 验证码发送、站内信通知、封禁检查 cron 需配置真实 DISCOURSE_API_KEY 后才能端到端测试
+2. 密钥重新生成需用户先完成验证流程（获取验证码），UX 可优化为独立验证弹窗
+3. 健康检查对需要认证的回调地址会显示"重定向/需认证（可能正常）"
+
+### 建议下一阶段优先事项
+1. 配置真实 Discourse 凭据进行完整端到端测试
+2. PKCE 支持（OAuth2 安全增强）
+3. Webhook 事件通知（应用接入事件回调）
+4. 暗黑模式支持
+5. 国际化 (i18n) 中英文切换
+6. User-Agent 解析用于会话设备识别
+7. 应用接入统计图表增强（按小时/天/周聚合）
