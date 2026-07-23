@@ -27,6 +27,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     db.accessToken.findFirst({ where: { appId: app.id }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
   ]);
 
+  // 7-day token usage trend
+  const now = new Date();
+  const dailyUsage: { date: string; count: number }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i + 1);
+    const count = await db.accessToken.count({
+      where: { appId: app.id, createdAt: { gte: dayStart, lt: dayEnd } },
+    });
+    dailyUsage.push({ date: dayStart.toISOString().slice(0, 10), count });
+  }
+
+  // Auth consent count (total authorizations)
+  const authCount = await db.authCode.count({ where: { appId: app.id } });
+
   const settings = await getSettings();
   return NextResponse.json({
     app,
@@ -35,6 +50,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       totalTokens: tokenCount,
       activeTokens,
       lastUsedAt: lastToken?.createdAt || null,
+      authCount,
+      dailyUsage,
     },
   });
 }

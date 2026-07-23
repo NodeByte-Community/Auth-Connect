@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -321,7 +321,7 @@ function KpiCard({ icon, label, value, sub, gradient, highlight, trend }: { icon
         <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} text-white flex items-center justify-center`}>{icon}</div>
       </div>
       <div className="flex items-end gap-2">
-        <div className="text-2xl font-black text-slate-800">{value.toLocaleString()}</div>
+        <CountUp value={value} />
         {trend && (
           <div className={`flex items-center gap-0.5 text-[10px] font-bold pb-1 ${trend.pct > 0 ? "text-emerald-600" : trend.pct < 0 ? "text-rose-600" : "text-slate-400"}`}>
             {trend.pct > 0 ? <ArrowUpRight className="w-3 h-3" /> : trend.pct < 0 ? <ArrowDownRight className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
@@ -332,15 +332,55 @@ function KpiCard({ icon, label, value, sub, gradient, highlight, trend }: { icon
       <div className="text-xs text-slate-400 mt-1 flex items-center justify-between">
         <span>{sub}</span>
         {trend && (
-          <span className="text-[9px] text-slate-400">本周 {trend.current} · 上周 {trend.previous}</span>
+          <span className="text-[9px] text-slate-400">
+            {trend.current > trend.previous ? "+" : ""}{trend.current - trend.previous} 较上周
+          </span>
         )}
       </div>
     </Card>
   );
 }
 
+function CountUp({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0);
+  const prevRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const start = prevRef.current;
+    const end = value;
+    if (start === end) return;
+    const duration = 800;
+    const startTime = performance.now();
+    const tick = () => {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(start + (end - start) * eased));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        prevRef.current = end;
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [value]);
+
+  return <div className="text-2xl font-black text-slate-800 tabular-nums">{display.toLocaleString()}</div>;
+}
+
 function InteractiveChart({ data, maxDaily }: { data: any[]; maxDaily: number }) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const hasData = data.some((d: any) => d.apps > 0 || d.tokens > 0 || d.users > 0);
+  if (!hasData) {
+    return (
+      <div className="h-32 flex flex-col items-center justify-center text-slate-400 gap-2">
+        <Activity className="w-8 h-8 opacity-30" />
+        <p className="text-xs">过去 14 天暂无活动记录</p>
+      </div>
+    );
+  }
   return (
     <div className="relative">
       <div className="flex items-end gap-1 h-32">
@@ -362,12 +402,12 @@ function InteractiveChart({ data, maxDaily }: { data: any[]; maxDaily: number })
             )}
             <div className="w-full flex flex-col justify-end h-full gap-0.5">
               <div
-                className={`w-full rounded-t-sm transition-all ${hovered === i ? "from-amber-600 to-orange-500" : "from-amber-500 to-orange-400"}`}
-                style={{ height: `${(d.tokens / maxDaily) * 100}%`, minHeight: d.tokens > 0 ? "2px" : "0", background: hovered === i ? "linear-gradient(to top, #d97706, #fb923c)" : undefined }}
+                className="w-full rounded-t-sm transition-all"
+                style={{ height: `${(d.tokens / maxDaily) * 100}%`, minHeight: d.tokens > 0 ? "2px" : "0", background: hovered === i ? "linear-gradient(to top, #d97706, #fb923c)" : "linear-gradient(to top, #f59e0b, #fb923c)" }}
               />
               <div
-                className={`w-full rounded-t-sm transition-all ${hovered === i ? "from-teal-600 to-emerald-500" : "from-teal-500 to-emerald-400"}`}
-                style={{ height: `${(d.apps / maxDaily) * 100}%`, minHeight: d.apps > 0 ? "2px" : "0", background: hovered === i ? "linear-gradient(to top, #0d9488, #34d399)" : undefined }}
+                className="w-full rounded-t-sm transition-all"
+                style={{ height: `${(d.apps / maxDaily) * 100}%`, minHeight: d.apps > 0 ? "2px" : "0", background: hovered === i ? "linear-gradient(to top, #0d9488, #34d399)" : "linear-gradient(to top, #14b8a6, #34d399)" }}
               />
             </div>
             <span className={`text-[8px] transition-colors ${hovered === i ? "text-slate-700 font-bold" : "text-slate-400"}`}>{d.date.slice(5)}</span>

@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Copy, KeyRound, Trash2, Loader2, ShieldCheck, Pencil, RefreshCw, ExternalLink, AlertTriangle, CheckCircle2, Code, HeartPulse, Check, X } from "lucide-react";
+import { Copy, KeyRound, Trash2, Loader2, ShieldCheck, Pencil, RefreshCw, ExternalLink, AlertTriangle, CheckCircle2, Code, HeartPulse, Check, X, Activity } from "lucide-react";
 
 interface AppItem {
   id: string;
@@ -256,21 +256,34 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
 
               {/* Usage stats */}
               {usage && (
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="rounded-lg border p-3 text-center bg-gradient-to-br from-teal-50 to-emerald-50">
-                    <div className="text-2xl font-black text-teal-700">{usage.totalTokens}</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">Token 签发总数</div>
-                  </div>
-                  <div className="rounded-lg border p-3 text-center bg-gradient-to-br from-amber-50 to-orange-50">
-                    <div className="text-2xl font-black text-amber-700">{usage.activeTokens}</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">活跃 Token</div>
-                  </div>
-                  <div className="rounded-lg border p-3 text-center bg-gradient-to-br from-fuchsia-50 to-purple-50">
-                    <div className="text-xs font-bold text-fuchsia-700 leading-tight pt-1">
-                      {usage.lastUsedAt ? new Date(usage.lastUsedAt).toLocaleDateString("zh-CN") : "从未使用"}
+                <div className="space-y-2">
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="rounded-lg border p-3 text-center bg-gradient-to-br from-teal-50 to-emerald-50">
+                      <div className="text-2xl font-black text-teal-700">{usage.totalTokens}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Token 签发</div>
                     </div>
-                    <div className="text-[10px] text-slate-500 mt-1">最近使用</div>
+                    <div className="rounded-lg border p-3 text-center bg-gradient-to-br from-amber-50 to-orange-50">
+                      <div className="text-2xl font-black text-amber-700">{usage.activeTokens}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">活跃 Token</div>
+                    </div>
+                    <div className="rounded-lg border p-3 text-center bg-gradient-to-br from-fuchsia-50 to-purple-50">
+                      <div className="text-2xl font-black text-fuchsia-700">{usage.authCount || 0}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">授权次数</div>
+                    </div>
+                    <div className="rounded-lg border p-3 text-center bg-gradient-to-br from-sky-50 to-cyan-50">
+                      <div className="text-xs font-bold text-sky-700 leading-tight pt-1">
+                        {usage.lastUsedAt ? new Date(usage.lastUsedAt).toLocaleDateString("zh-CN") : "从未"}
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-1">最近使用</div>
+                    </div>
                   </div>
+                  {/* 7-day mini chart */}
+                  {usage.dailyUsage && (
+                    <div className="rounded-lg border p-3 bg-slate-50">
+                      <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">近 7 天 Token 签发</div>
+                      <MiniChart data={usage.dailyUsage} />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -657,6 +670,54 @@ function HealthCheck({ appId }: { appId: string }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function MiniChart({ data }: { data: { date: string; count: number }[] }) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const max = Math.max(...data.map((d) => d.count), 1);
+  const hasData = data.some((d) => d.count > 0);
+  if (!hasData) {
+    return (
+      <div className="h-16 flex items-center justify-center text-slate-400 text-xs gap-1.5">
+        <Activity className="w-4 h-4 opacity-40" />
+        <span>暂无 Token 签发记录</span>
+      </div>
+    );
+  }
+  return (
+    <div className="relative">
+      <div className="flex items-end gap-1.5 h-16">
+        {data.map((d, i) => (
+          <div
+            key={i}
+            className="flex-1 flex flex-col items-center gap-1 relative cursor-pointer"
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          >
+            {hovered === i && (
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-20 bg-slate-900 text-white text-[9px] rounded px-1.5 py-1 shadow-lg whitespace-nowrap pointer-events-none">
+                <div className="font-bold">{d.date.slice(5)}</div>
+                <div>{d.count} 次</div>
+              </div>
+            )}
+            <div className="w-full flex flex-col justify-end h-full">
+              <div
+                className="w-full rounded-t-sm transition-all"
+                style={{
+                  height: `${(d.count / max) * 100}%`,
+                  minHeight: d.count > 0 ? "3px" : "0",
+                  background: hovered === i
+                    ? "linear-gradient(to top, #0d9488, #34d399)"
+                    : "linear-gradient(to top, #14b8a6, #34d399)",
+                }}
+              />
+            </div>
+            <span className={`text-[8px] transition-colors ${hovered === i ? "text-slate-700 font-bold" : "text-slate-400"}`}>{d.date.slice(8)}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
