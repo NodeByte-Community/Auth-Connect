@@ -61,24 +61,24 @@ export function AdminPanel() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="border-b bg-white sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
-            <ArrowLeft className="w-4 h-4 mr-1" /> 返回前台
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-3">
+          <Button variant="ghost" size="sm" onClick={() => router.push("/")} className="shrink-0">
+            <ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">返回前台</span>
           </Button>
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-rose-500" />
-            <span className="font-bold">NodeByte Connect 管理后台</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <ShieldAlert className="w-5 h-5 text-rose-500 shrink-0" />
+            <span className="font-bold truncate text-sm sm:text-base">NodeByte Connect <span className="hidden sm:inline">管理后台</span></span>
           </div>
-          <Badge variant="secondary" className="ml-auto">管理员: {user.username}</Badge>
+          <Badge variant="secondary" className="ml-auto shrink-0 text-xs">{user.username}</Badge>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-4">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-4 py-4">
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 h-auto">
-            <TabsTrigger value="overview" className="flex items-center gap-1.5"><LayoutDashboard className="w-4 h-4" />概览</TabsTrigger>
-            <TabsTrigger value="apps" className="flex items-center gap-1.5"><AppWindow className="w-4 h-4" />应用列表</TabsTrigger>
-            <TabsTrigger value="reviews" className="flex items-center gap-1.5 relative">
+          <TabsList className="flex w-full overflow-x-auto md:grid md:grid-cols-6 h-auto gap-1 mb-1">
+            <TabsTrigger value="overview" className="flex items-center gap-1.5 shrink-0"><LayoutDashboard className="w-4 h-4" />概览</TabsTrigger>
+            <TabsTrigger value="apps" className="flex items-center gap-1.5 shrink-0"><AppWindow className="w-4 h-4" />应用列表</TabsTrigger>
+            <TabsTrigger value="reviews" className="flex items-center gap-1.5 relative shrink-0">
               <ScrollText className="w-4 h-4" />审核列表
               {pendingCount > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
@@ -86,9 +86,9 @@ export function AdminPanel() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-1.5"><Users className="w-4 h-4" />用户列表</TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center gap-1.5"><Activity className="w-4 h-4" />用户日志</TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-1.5"><SettingsIcon className="w-4 h-4" />系统设置</TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-1.5 shrink-0"><Users className="w-4 h-4" />用户列表</TabsTrigger>
+            <TabsTrigger value="logs" className="flex items-center gap-1.5 shrink-0"><Activity className="w-4 h-4" />用户日志</TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-1.5 shrink-0"><SettingsIcon className="w-4 h-4" />系统设置</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview"><OverviewTab onNavigate={setTab} /></TabsContent>
@@ -590,17 +590,19 @@ function AppsTab() {
       </div>
 
       {selected.size > 0 && (
-        <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-teal-50 border border-teal-200">
-          <span className="text-sm text-teal-700">已选 {selected.size} 项</span>
-          <Button size="sm" variant="outline" onClick={() => batchAction("enable")}><Play className="w-3.5 h-3.5 mr-1" />启用</Button>
-          <Button size="sm" variant="outline" onClick={() => batchAction("disable")}><Pause className="w-3.5 h-3.5 mr-1" />停用</Button>
-          <Button size="sm" variant="outline" className="text-rose-600" onClick={() => batchAction("delete")}><Trash2 className="w-3.5 h-3.5 mr-1" />删除</Button>
+        <div className="sticky bottom-2 z-20 flex items-center gap-2 mb-3 p-2.5 rounded-lg bg-teal-50 border border-teal-300 shadow-lg flex-wrap">
+          <span className="text-sm text-teal-700 font-medium">已选 {selected.size} 项</span>
+          <div className="flex gap-1.5 ml-auto sm:ml-0">
+            <Button size="sm" variant="outline" onClick={() => batchAction("enable")}><Play className="w-3.5 h-3.5 mr-1" />启用</Button>
+            <Button size="sm" variant="outline" onClick={() => batchAction("disable")}><Pause className="w-3.5 h-3.5 mr-1" />停用</Button>
+            <Button size="sm" variant="outline" className="text-rose-600" onClick={() => batchAction("delete")}><Trash2 className="w-3.5 h-3.5 mr-1" />删除</Button>
+          </div>
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>取消</Button>
         </div>
       )}
 
-      <ScrollArea className="h-[60vh] rounded-lg border">
-        <table className="w-full text-sm">
+      <ScrollArea className="h-[60vh] rounded-lg border overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead className="sticky top-0 bg-slate-50 border-b">
             <tr>
               <th className="p-2 text-left w-8"><Checkbox checked={selected.size === apps.length && apps.length > 0} onCheckedChange={selectAll} /></th>
@@ -749,16 +751,18 @@ function ReviewsTab({ onChanged }: { onChanged: () => void }) {
       </div>
 
       {selected.size > 0 && status === "pending" && (
-        <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-teal-50 border border-teal-200">
-          <span className="text-sm text-teal-700">已选 {selected.size} 项</span>
-          <Button size="sm" onClick={() => doAction("approve", Array.from(selected))}><CheckCircle2 className="w-3.5 h-3.5 mr-1" />批量通过</Button>
-          <Button size="sm" variant="outline" className="text-rose-600" onClick={() => { setRejectMode("batch"); setRejectOpen(true); }}><XCircle className="w-3.5 h-3.5 mr-1" />批量拒绝</Button>
+        <div className="sticky bottom-2 z-20 flex items-center gap-2 mb-3 p-2.5 rounded-lg bg-teal-50 border border-teal-300 shadow-lg flex-wrap">
+          <span className="text-sm text-teal-700 font-medium">已选 {selected.size} 项</span>
+          <div className="flex gap-1.5 ml-auto sm:ml-0">
+            <Button size="sm" onClick={() => doAction("approve", Array.from(selected))}><CheckCircle2 className="w-3.5 h-3.5 mr-1" />批量通过</Button>
+            <Button size="sm" variant="outline" className="text-rose-600" onClick={() => { setRejectMode("batch"); setRejectOpen(true); }}><XCircle className="w-3.5 h-3.5 mr-1" />批量拒绝</Button>
+          </div>
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>取消</Button>
         </div>
       )}
 
-      <ScrollArea className="h-[60vh] rounded-lg border">
-        <table className="w-full text-sm">
+      <ScrollArea className="h-[60vh] rounded-lg border overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead className="sticky top-0 bg-slate-50 border-b">
             <tr>
               <th className="p-2 text-left w-8">{status === "pending" && <Checkbox checked={selected.size === reviews.length && reviews.length > 0} onCheckedChange={() => selected.size === reviews.length ? setSelected(new Set()) : setSelected(new Set(reviews.map((r) => r.id)))} />}</th>
@@ -948,17 +952,19 @@ function UsersTab() {
       </div>
 
       {selected.size > 0 && (
-        <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-teal-50 border border-teal-200">
-          <span className="text-sm text-teal-700">已选 {selected.size} 项</span>
-          <Button size="sm" variant="outline" onClick={() => batchAction("block_submit")}><Pause className="w-3.5 h-3.5 mr-1" />停用申请权限</Button>
-          <Button size="sm" variant="outline" onClick={() => batchAction("unblock_submit")}><Play className="w-3.5 h-3.5 mr-1" />恢复申请权限</Button>
-          <Button size="sm" variant="outline" className="text-rose-600" onClick={() => batchAction("disable_apps")}><Pause className="w-3.5 h-3.5 mr-1" />停用所有应用</Button>
+        <div className="sticky bottom-2 z-20 flex items-center gap-2 mb-3 p-2.5 rounded-lg bg-teal-50 border border-teal-300 shadow-lg flex-wrap">
+          <span className="text-sm text-teal-700 font-medium">已选 {selected.size} 项</span>
+          <div className="flex gap-1.5 ml-auto sm:ml-0 flex-wrap">
+            <Button size="sm" variant="outline" onClick={() => batchAction("block_submit")}><Pause className="w-3.5 h-3.5 mr-1" />停用申请权限</Button>
+            <Button size="sm" variant="outline" onClick={() => batchAction("unblock_submit")}><Play className="w-3.5 h-3.5 mr-1" />恢复申请权限</Button>
+            <Button size="sm" variant="outline" className="text-rose-600" onClick={() => batchAction("disable_apps")}><Pause className="w-3.5 h-3.5 mr-1" />停用所有应用</Button>
+          </div>
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>取消</Button>
         </div>
       )}
 
-      <ScrollArea className="h-[60vh] rounded-lg border">
-        <table className="w-full text-sm">
+      <ScrollArea className="h-[60vh] rounded-lg border overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead className="sticky top-0 bg-slate-50 border-b">
             <tr>
               <th className="p-2 text-left w-8"><Checkbox checked={selected.size === filteredUsers.length && filteredUsers.length > 0} onCheckedChange={() => selected.size === filteredUsers.length ? setSelected(new Set()) : setSelected(new Set(filteredUsers.map((u) => u.id)))} /></th>
@@ -1215,8 +1221,8 @@ function LogsTab() {
         <Button variant="outline" size="sm" className="text-rose-600" onClick={clearLogs}><Eraser className="w-4 h-4 mr-1" />清空</Button>
       </div>
 
-      <ScrollArea className="h-[60vh] rounded-lg border">
-        <table className="w-full text-sm">
+      <ScrollArea className="h-[60vh] rounded-lg border overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead className="sticky top-0 bg-slate-50 border-b">
             <tr>
               <th className="p-2 text-left">时间</th>
