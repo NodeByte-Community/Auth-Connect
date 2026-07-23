@@ -1,143 +1,181 @@
-// NodeByte Connect - SSO System Prisma Schema
+// NodeByte Connect - SSO System Prisma Schema (MySQL)
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id              String   @id @default(cuid())
-  externalId      String   @unique // Discourse user ID
-  email           String
-  username        String
-  name            String?
-  avatarUrl       String?
-  bio             String?
-  trustLevel      Int      @default(0) // Discourse trust level 0-4
-  isAdmin         Boolean  @default(false)
-  isModerator     Boolean  @default(false)
-  isBanned        Boolean  @default(false)
-  isSuspended     Boolean  @default(false)
-  appSubmitBlocked Boolean @default(false) // admin can block user from submitting apps
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  lastLoginAt     DateTime?
+  id               String   @id @default(cuid())
+  externalId       String   @unique @db.VarChar(64)
+  email            String   @db.VarChar(255)
+  username         String   @db.VarChar(64)
+  name             String?  @db.VarChar(128)
+  avatarUrl        String?  @db.VarChar(512)
+  bio              String?  @db.Text
+  trustLevel       Int      @default(0)
+  isAdmin          Boolean  @default(false)
+  isModerator      Boolean  @default(false)
+  isBanned         Boolean  @default(false)
+  isSuspended      Boolean  @default(false)
+  appSubmitBlocked Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  lastLoginAt      DateTime?
 
-  applications    Application[]
-  reviews         AppReview[]      @relation("ReviewerReviews")
-  logs            UserLog[]
-  authCodes       AuthCode[]
-  accessTokens    AccessToken[]
-  sessions        Session[]
+  applications Application[]
+  reviews      AppReview[]      @relation("ReviewerReviews")
+  logs         UserLog[]
+  authCodes    AuthCode[]
+  accessTokens AccessToken[]
+  sessions     Session[]
+
+  @@index([username])
+  @@index([email])
+  @@map("users")
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token        String   @unique // session cookie token
-  createdAt    DateTime @default(now())
-  expiresAt    DateTime
-  pendingAuthorize String? // pending oauth authorize URL to redirect to after login
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token             String   @unique @db.VarChar(128)
+  createdAt         DateTime @default(now())
+  expiresAt         DateTime
+  pendingAuthorize  String?  @db.VarChar(512)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
 }
 
 model Application {
-  id            String       @id @default(cuid())
-  appId         String       @unique // public app identifier (nb_xxx)
-  name          String
-  icon          String?
-  description   String
-  type          String       // "oidc" | "oauth2"
-  callbackUrls  String       // newline-separated
-  status        String       @default("pending") // pending, approved, rejected, disabled, pending_re_review
-  rejectReason  String?
-  ownerId       String
-  owner         User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  clientSecret  String
-  scopes        String       @default("openid profile email")
-  siteLogo      String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  reviewedAt    DateTime?
-  reviewerId    String?
+  id           String   @id @default(cuid())
+  appId        String   @unique @db.VarChar(64)
+  name         String   @db.VarChar(128)
+  icon         String?  @db.VarChar(512)
+  description  String   @db.Text
+  type         String   @db.VarChar(16)
+  callbackUrls String   @db.Text
+  status       String   @default("pending") @db.VarChar(32)
+  rejectReason String?  @db.Text
+  ownerId      String
+  owner        User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  clientSecret String   @db.VarChar(128)
+  scopes       String   @default("openid profile email") @db.VarChar(256)
+  siteLogo     String?  @db.VarChar(512)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  reviewedAt   DateTime?
+  reviewerId   String?  @db.VarChar(64)
 
-  reviews       AppReview[]
-  authCodes     AuthCode[]
-  accessTokens  AccessToken[]
-  verifyCodes   VerificationCode[]
+  reviews      AppReview[]
+  authCodes    AuthCode[]
+  accessTokens AccessToken[]
+  verifyCodes  VerificationCode[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([type])
+  @@map("applications")
 }
 
 model AppReview {
-  id           String    @id @default(cuid())
-  appId        String
-  app          Application @relation(fields: [appId], references: [id], onDelete: Cascade)
-  status       String    // pending, approved, rejected
-  reason       String?
-  reviewerId   String?
-  reviewer     User?     @relation("ReviewerReviews", fields: [reviewerId], references: [id])
-  createdAt    DateTime  @default(now())
-  reviewedAt   DateTime?
+  id         String    @id @default(cuid())
+  appId      String
+  app        Application @relation(fields: [appId], references: [id], onDelete: Cascade)
+  status     String    @db.VarChar(32)
+  reason     String?   @db.Text
+  reviewerId String?   @db.VarChar(64)
+  reviewer   User?     @relation("ReviewerReviews", fields: [reviewerId], references: [id])
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+
+  @@index([appId])
+  @@index([status])
+  @@map("app_reviews")
 }
 
 model VerificationCode {
-  id           String   @id @default(cuid())
-  appId        String
-  app          Application @relation(fields: [appId], references: [id], onDelete: Cascade)
-  code         String
-  used         Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  expiresAt    DateTime
+  id        String   @id @default(cuid())
+  appId     String
+  app       Application @relation(fields: [appId], references: [id], onDelete: Cascade)
+  code      String   @db.VarChar(8)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([appId])
+  @@index([code])
+  @@map("verification_codes")
 }
 
 model AuthCode {
-  id           String   @id @default(cuid())
-  code         String   @unique
-  appId        String
-  app          Application @relation(fields: [appId], references: [id], onDelete: Cascade)
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scopes       String
-  redirectUri  String
-  createdAt    DateTime @default(now())
-  expiresAt    DateTime
-  used         Boolean  @default(false)
+  id         String   @id @default(cuid())
+  code       String   @unique @db.VarChar(128)
+  appId      String
+  app        Application @relation(fields: [appId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scopes     String   @db.VarChar(256)
+  redirectUri String  @db.VarChar(512)
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+
+  @@index([appId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_codes")
 }
 
 model AccessToken {
   id           String   @id @default(cuid())
-  token        String   @unique
-  refreshToken String?  @unique
+  token        String   @unique @db.VarChar(128)
+  refreshToken String?  @unique @db.VarChar(128)
   appId        String
   app          Application @relation(fields: [appId], references: [id], onDelete: Cascade)
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scopes       String
+  scopes       String   @db.VarChar(256)
   createdAt    DateTime @default(now())
   expiresAt    DateTime
+
+  @@index([appId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("access_tokens")
 }
 
 model UserLog {
-  id           String   @id @default(cuid())
-  userId       String?
-  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action       String
-  details      String?
-  ip           String?
-  createdAt    DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   @db.VarChar(64)
+  details   String?  @db.Text
+  ip        String?  @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("user_logs")
 }
 
 model SystemSettings {
-  id           String   @id @default("default")
-  maxAppsPerUser     Int    @default(5)
-  minTrustLevel      Int    @default(1)
-  notifyOnSubmit     Boolean @default(true)
-  notifyOnApprove    Boolean @default(true)
-  notifyOnReject     Boolean @default(true)
-  notifyOnFail       Boolean @default(true)
-  sessionTimeoutMin  Int    @default(720) // 12 hours
-  updatedAt    DateTime @updatedAt
+  id               String   @id @default("default") @db.VarChar(32)
+  maxAppsPerUser   Int      @default(5)
+  minTrustLevel    Int      @default(1)
+  notifyOnSubmit   Boolean  @default(true)
+  notifyOnApprove  Boolean  @default(true)
+  notifyOnReject   Boolean  @default(true)
+  notifyOnFail     Boolean  @default(true)
+  sessionTimeoutMin Int     @default(720)
+  updatedAt        DateTime @updatedAt
+
+  @@map("system_settings")
 }

@@ -809,3 +809,42 @@ v1.1.0 是重大功能更新版本，包含自 v1.0.0 以来的所有迭代改�
 - ✅ GitHub Release 已创建 (ID: 358509385)
 - ✅ Standalone包已上传 (52MB)
 - ✅ 未覆盖 v1.0.0 (两个版本共存)
+
+---
+
+## start.sh 修复 + .env 恢复 + Standalone包重新发布 (2025-01-23)
+
+### 问题
+1. **start.sh** 包含 build 逻辑，会触发重新编译而非直接启动
+2. **start.sh** banner 仍显示 "Discourse Connect"（应为 NodeByte SSO）
+3. **.env** 被意外截断只剩 DATABASE_URL
+4. **standalone包** 缺少 start.sh、.env.example、prisma 目录
+
+### 修复内容
+
+#### start.sh 重写
+- **移除 build 逻辑**: 不再调用 `bun run build`，直接启动 `node server.js`
+- **支持3种路径**: .next/standalone (dev)、standalone/ (release)、当前目录
+- **更新文案**: "Discourse Connect" → "NodeByte SSO"
+- **移除 DEV mode** 引用
+- **改进错误提示**: 找不到standalone时给出两种解决方案
+- **启动信息**: 显示 Base URL / SSO / Standalone dir / Mode
+
+#### .env 恢复
+- 恢复完整配置: PORT/BASE_URL/DISCOURSE_*/JWT/SESSION/ADMIN_*/CRON_KEY 等
+- .env.example 同步更新，添加 BANNED_CHECK_INTERVAL 注释
+
+#### Standalone包完善
+- 包含: server.js + node_modules + public + .next/static
+- **新增**: .env.example (用户参考)
+- **新增**: start.sh (启动脚本)
+- **新增**: prisma/ (数据库schema)
+- **新增**: db/ (数据库目录)
+
+### 验证结果
+- ✅ start.sh 直接启动无需编译
+- ✅ .env 完整 (13个配置项)
+- ✅ standalone包包含 start.sh/.env.example/prisma
+- ✅ v1.1.0 Release asset 已更新 (53MB)
+- ✅ 下载: https://github.com/cshdotcom/nbconnect/releases/download/v1.1.0/nbconnect-standalone-v1.1.0.tar.gz
+- ✅ 代码已推送 (commit 6ed088b)
