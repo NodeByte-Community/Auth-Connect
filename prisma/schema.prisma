@@ -5,18 +5,18 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model User {
   id               String   @id @default(cuid())
-  externalId       String   @unique @db.VarChar(64)
-  email            String   @db.VarChar(255)
-  username         String   @db.VarChar(64)
-  name             String?  @db.VarChar(128)
-  avatarUrl        String?  @db.VarChar(512)
-  bio              String?  @db.Text
+  externalId       String   @unique 
+  email            String   
+  username         String   
+  name             String?  
+  avatarUrl        String?  
+  bio              String?  
   trustLevel       Int      @default(0)
   isAdmin          Boolean  @default(false)
   isModerator      Boolean  @default(false)
@@ -43,10 +43,10 @@ model Session {
   id                String   @id @default(cuid())
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token             String   @unique @db.VarChar(128)
+  token             String   @unique 
   createdAt         DateTime @default(now())
   expiresAt         DateTime
-  pendingAuthorize  String?  @db.VarChar(512)
+  pendingAuthorize  String?  
 
   @@index([userId])
   @@index([expiresAt])
@@ -55,23 +55,23 @@ model Session {
 
 model Application {
   id           String   @id @default(cuid())
-  appId        String   @unique @db.VarChar(64)
-  name         String   @db.VarChar(128)
-  icon         String?  @db.VarChar(512)
-  description  String   @db.Text
-  type         String   @db.VarChar(16)
-  callbackUrls String   @db.Text
-  status       String   @default("pending") @db.VarChar(32)
-  rejectReason String?  @db.Text
+  appId        String   @unique 
+  name         String   
+  icon         String?  
+  description  String   
+  type         String   
+  callbackUrls String   
+  status       String   @default("pending") 
+  rejectReason String?  
   ownerId      String
   owner        User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  clientSecret String   @db.VarChar(128)
-  scopes       String   @default("openid profile email") @db.VarChar(256)
-  siteLogo     String?  @db.VarChar(512)
+  clientSecret String   
+  scopes       String   @default("openid profile email") 
+  siteLogo     String?  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   reviewedAt   DateTime?
-  reviewerId   String?  @db.VarChar(64)
+  reviewerId   String?  
 
   reviews      AppReview[]
   authCodes    AuthCode[]
@@ -88,9 +88,9 @@ model AppReview {
   id         String    @id @default(cuid())
   appId      String
   app        Application @relation(fields: [appId], references: [id], onDelete: Cascade)
-  status     String    @db.VarChar(32)
-  reason     String?   @db.Text
-  reviewerId String?   @db.VarChar(64)
+  status     String    
+  reason     String?   
+  reviewerId String?   
   reviewer   User?     @relation("ReviewerReviews", fields: [reviewerId], references: [id])
   createdAt  DateTime  @default(now())
   reviewedAt DateTime?
@@ -104,7 +104,7 @@ model VerificationCode {
   id        String   @id @default(cuid())
   appId     String
   app       Application @relation(fields: [appId], references: [id], onDelete: Cascade)
-  code      String   @db.VarChar(8)
+  code      String   
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
   expiresAt DateTime
@@ -116,13 +116,13 @@ model VerificationCode {
 
 model AuthCode {
   id         String   @id @default(cuid())
-  code       String   @unique @db.VarChar(128)
+  code       String   @unique 
   appId      String
   app        Application @relation(fields: [appId], references: [id], onDelete: Cascade)
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scopes     String   @db.VarChar(256)
-  redirectUri String  @db.VarChar(512)
+  scopes     String   
+  redirectUri String  
   createdAt  DateTime @default(now())
   expiresAt  DateTime
   used       Boolean  @default(false)
@@ -135,13 +135,13 @@ model AuthCode {
 
 model AccessToken {
   id           String   @id @default(cuid())
-  token        String   @unique @db.VarChar(128)
-  refreshToken String?  @unique @db.VarChar(128)
+  token        String   @unique 
+  refreshToken String?  @unique 
   appId        String
   app          Application @relation(fields: [appId], references: [id], onDelete: Cascade)
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scopes       String   @db.VarChar(256)
+  scopes       String   
   createdAt    DateTime @default(now())
   expiresAt    DateTime
 
@@ -155,9 +155,9 @@ model UserLog {
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action    String   @db.VarChar(64)
-  details   String?  @db.Text
-  ip        String?  @db.VarChar(64)
+  action    String   
+  details   String?  
+  ip        String?  
   createdAt DateTime @default(now())
 
   @@index([userId])
@@ -167,7 +167,7 @@ model UserLog {
 }
 
 model SystemSettings {
-  id               String   @id @default("default") @db.VarChar(32)
+  id               String   @id @default("default") 
   maxAppsPerUser   Int      @default(5)
   minTrustLevel    Int      @default(1)
   notifyOnSubmit   Boolean  @default(true)
