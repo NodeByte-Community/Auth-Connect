@@ -156,21 +156,50 @@ export function ApplyAppDialog({ open, onOpenChange, onCreated, trustLevel, minT
           {/* Section: 品牌外观 */}
           <SectionTitle icon={<ImageIcon className="w-3.5 h-3.5" />} title="品牌与外观" />
           <div className="space-y-1.5">
-            <Label>应用图标 URL <span className="text-xs text-slate-400 font-normal">（可在线预览）</span></Label>
+            <Label>应用图标 URL <span className="text-xs text-slate-400 font-normal">（留空将自动从回调地址识别）</span></Label>
             <div className="flex gap-2 items-start">
-              <Input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="https://example.com/logo.png" />
-              {icon && (
-                <div className="w-12 h-12 rounded-lg border flex items-center justify-center overflow-hidden bg-slate-50 shrink-0">
-                  <img src={icon} alt="preview" className="w-full h-full object-contain" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
-                </div>
-              )}
-              {!icon && <div className="w-12 h-12 rounded-lg border flex items-center justify-center bg-slate-50 shrink-0"><ImageIcon className="w-5 h-5 text-slate-300" /></div>}
+              <Input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="https://example.com/logo.png（留空自动识别）" />
+              <div className="w-12 h-12 rounded-lg border flex items-center justify-center overflow-hidden bg-slate-50 shrink-0">
+                {(() => {
+                  let displayUrl = icon;
+                  if (!displayUrl && callbackUrls) {
+                    try {
+                      const firstUrl = callbackUrls.split("\n")[0].trim();
+                      if (firstUrl) displayUrl = `https://www.google.com/s2/favicons?domain=${new URL(firstUrl).hostname}&sz=64`;
+                    } catch {}
+                  }
+                  if (displayUrl) {
+                    return <img src={displayUrl} alt="preview" className="w-full h-full object-contain" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />;
+                  }
+                  return <ImageIcon className="w-5 h-5 text-slate-300" />;
+                })()}
+              </div>
             </div>
+            {!icon && callbackUrls && (() => {
+              try {
+                const firstUrl = callbackUrls.split("\n")[0].trim();
+                if (firstUrl) {
+                  const domain = new URL(firstUrl).hostname;
+                  return <p className="text-[10px] text-teal-600">✓ 将自动使用 {domain} 的 favicon 作为图标</p>;
+                }
+              } catch {}
+              return null;
+            })()}
           </div>
 
           <div className="space-y-1.5">
-            <Label>站点 LOGO URL <span className="text-xs text-slate-400 font-normal">（授权页面展示，建议正方形）</span></Label>
-            <Input value={siteLogo} onChange={(e) => setSiteLogo(e.target.value)} placeholder="https://example.com/site-logo.png" />
+            <Label>站点 LOGO URL <span className="text-xs text-slate-400 font-normal">（授权页面展示，留空自动识别）</span></Label>
+            <Input value={siteLogo} onChange={(e) => setSiteLogo(e.target.value)} placeholder="https://example.com/site-logo.png（留空自动识别）" />
+            {!siteLogo && callbackUrls && (() => {
+              try {
+                const firstUrl = callbackUrls.split("\n")[0].trim();
+                if (firstUrl) {
+                  const domain = new URL(firstUrl).hostname;
+                  return <p className="text-[10px] text-teal-600">✓ 将自动使用 {domain} 的 favicon 作为站点 LOGO</p>;
+                }
+              } catch {}
+              return null;
+            })()}
           </div>
 
           {/* Section: 技术配置 */}

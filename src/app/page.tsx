@@ -17,10 +17,6 @@ function HomeInner() {
   const [redirecting, setRedirecting] = useState(false);
   const fetchedRef = useRef(false);
 
-  // useSearchParams is safe inside Suspense boundary
-  const view = sp.get("view");
-  const isAdminRoute = sp.get("admin") === "1";
-
   // Only fetch session ONCE on mount
   useEffect(() => {
     if (fetchedRef.current) return;
@@ -40,7 +36,7 @@ function HomeInner() {
     window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnUrl)}`;
   }, [redirecting]);
 
-  // Loading state
+  // Loading state - SSR and initial hydration both render this
   if (!booted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -53,6 +49,10 @@ function HomeInner() {
   if (!user) {
     return <LoginPage onLogin={handleLogin} redirecting={redirecting} />;
   }
+
+  // Read searchParams ONLY after booted (client-only, no hydration mismatch)
+  const view = sp.get("view");
+  const isAdminRoute = sp.get("admin") === "1";
 
   if (view === "authorize") {
     return <ConsentScreen />;

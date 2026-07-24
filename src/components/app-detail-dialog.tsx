@@ -306,7 +306,9 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
               {app.status !== "disabled" && (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => setView("edit")}><Pencil className="w-3.5 h-3.5 mr-1" />编辑（需重新审核）</Button>
-                  <Button variant="outline" size="sm" className="text-rose-600 hover:text-rose-700" onClick={() => setDeleteConfirm(true)}><Trash2 className="w-3.5 h-3.5 mr-1" />删除应用</Button>
+                  {app.status === "approved" && (
+                    <Button variant="outline" size="sm" className="text-rose-600 hover:text-rose-700" onClick={() => setDeleteConfirm(true)}><Trash2 className="w-3.5 h-3.5 mr-1" />删除应用</Button>
+                  )}
                 </div>
               )}
             </div>

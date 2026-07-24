@@ -43,7 +43,13 @@ export async function POST(req: NextRequest) {
 
   // ===== 后端安全校验 =====
   // 不信任 session.user.trustLevel，从 DB 重新读取 + 实时 Discourse API 验证
-  const levelCheck = await checkTrustLevel(session.user.id, { checkDiscourse: true });
+  let levelCheck;
+  try {
+    levelCheck = await checkTrustLevel(session.user.id, { checkDiscourse: true });
+  } catch (e: any) {
+    console.error("[apps POST] security check error:", e);
+    return NextResponse.json({ error: `安全校验失败: ${e.message || "未知错误"}` }, { status: 500 });
+  }
   if (!levelCheck.ok) {
     return NextResponse.json({ error: levelCheck.error }, { status: 403 });
   }
@@ -90,18 +96,30 @@ export async function POST(req: NextRequest) {
   const appId = generateAppId();
   const clientSecret = generateClientSecret();
 
+  // Auto-detect favicon from first callback URL if icon/siteLogo not provided
+  let autoIcon = icon ? String(icon).slice(0, 2048) : null;
+  let autoSiteLogo = siteLogo ? String(siteLogo).slice(0, 2048) : null;
+  if ((!autoIcon || !autoSiteLogo) && urls.length > 0) {
+    try {
+      const domain = new URL(urls[0]).hostname;
+      const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+      if (!autoIcon) autoIcon = faviconUrl;
+      if (!autoSiteLogo) autoSiteLogo = faviconUrl;
+    } catch {}
+  }
+
   const app = await db.application.create({
     data: {
       appId,
       name: String(name).slice(0, 100),
-      icon: icon ? String(icon).slice(0, 2048) : null,
+      icon: autoIcon,
       description: String(description).slice(0, 2000),
       type,
       callbackUrls: urls.join("\n"),
       ownerId: session.user.id,
       clientSecret,
       scopes: type === "oidc" ? "openid profile email" : "profile email",
-      siteLogo: siteLogo ? String(siteLogo).slice(0, 2048) : null,
+      siteLogo: autoSiteLogo,
       status: "pending",
     },
   });
