@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { validateRedirectUriDomain } from "@/lib/url";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,8 @@ export const dynamic = "force-dynamic";
  * GET /api/oauth/appinfo?client_id=&redirect_uri=
  * Public endpoint returning app display info for the consent screen.
  * Does NOT require login.
+ *
+ * redirect_uri 校验：只检查域名，不检查路径后缀。
  */
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
@@ -17,9 +20,16 @@ export async function GET(req: NextRequest) {
   if (!app) return NextResponse.json({ error: "invalid_client" }, { status: 400 });
   if (app.status !== "approved") return NextResponse.json({ error: "app_disabled" }, { status: 403 });
 
-  const allowed = app.callbackUrls.split("\n").map((s) => s.trim()).filter(Boolean);
-  if (redirect_uri && !allowed.includes(redirect_uri)) {
-    return NextResponse.json({ error: "invalid_redirect_uri" }, { status: 400 });
+  // 校验 redirect_uri 域名（不检查路径后缀）
+  if (redirect_uri) {
+    const allowedUrls = app.callbackUrls.split("\n").map((s) => s.trim()).filter(Boolean);
+    const domainCheck = validateRedirectUriDomain(redirect_uri, allowedUrls);
+    if (!domainCheck.ok) {
+      return NextResponse.json(
+        { error: "invalid_redirect_uri", error_description: domainCheck.error },
+        { status: 400 }
+      );
+    }
   }
 
   return NextResponse.json({
