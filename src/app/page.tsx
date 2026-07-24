@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense, useCallback, useRef } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { ConnectDashboard } from "@/components/connect-dashboard";
@@ -12,21 +12,21 @@ import { Loader2, LogIn, ShieldCheck, ArrowRight } from "lucide-react";
 
 function HomeInner() {
   const sp = useSearchParams();
-  const { user, loading, refreshSession } = useAppStore();
-  const [booted, setBooted] = useState(false);
+  const { user, refreshSession } = useAppStore();
+  const [ready, setReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const fetchedRef = useRef(false);
 
-  // Only fetch session ONCE on mount
   useEffect(() => {
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
-    let active = true;
+    let cancelled = false;
     (async () => {
-      await refreshSession();
-      if (active) setBooted(true);
+      try {
+        await refreshSession();
+      } catch {
+        // ignore - store handles errors internally
+      }
+      if (!cancelled) setReady(true);
     })();
-    return () => { active = false; };
+    return () => { cancelled = true; };
   }, []);
 
   const handleLogin = useCallback(() => {
@@ -36,8 +36,7 @@ function HomeInner() {
     window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnUrl)}`;
   }, [redirecting]);
 
-  // Loading state - SSR and initial hydration both render this
-  if (!booted || loading) {
+  if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
@@ -45,24 +44,15 @@ function HomeInner() {
     );
   }
 
-  // Not logged in
   if (!user) {
     return <LoginPage onLogin={handleLogin} redirecting={redirecting} />;
   }
 
-  // Read searchParams ONLY after booted (client-only, no hydration mismatch)
   const view = sp.get("view");
   const isAdminRoute = sp.get("admin") === "1";
 
-  if (view === "authorize") {
-    return <ConsentScreen />;
-  }
-
-  if (isAdminRoute) {
-    if (user.isAdmin) return <AdminPanel />;
-    return <ConnectDashboard />;
-  }
-
+  if (view === "authorize") return <ConsentScreen />;
+  if (isAdminRoute) return user.isAdmin ? <AdminPanel /> : <ConnectDashboard />;
   return <ConnectDashboard />;
 }
 

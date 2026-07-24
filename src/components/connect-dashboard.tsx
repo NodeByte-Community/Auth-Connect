@@ -31,7 +31,7 @@ interface AppItem {
 
 export function ConnectDashboard() {
   const router = useRouter();
-  const { user, pendingAuthorize, refreshSession } = useAppStore();
+  const { user, pendingAuthorize } = useAppStore();
   const [pcOpen, setPcOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
@@ -70,7 +70,7 @@ export function ConnectDashboard() {
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     toast.success("已退出登录");
-    setTimeout(() => window.location.reload(), 300);
+    setTimeout(() => { window.location.href = "/"; }, 300);
   };
 
   const handleAvatarClick = () => setPcOpen(true);

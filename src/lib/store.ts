@@ -17,34 +17,31 @@ export interface SessionUser {
 
 interface AppState {
   user: SessionUser | null;
-  loading: boolean;
   pendingAuthorize: string | null;
   setUser: (u: SessionUser | null) => void;
-  setLoading: (b: boolean) => void;
-  setPendingAuthorize: (s: string | null) => void;
   refreshSession: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set) => ({
   user: null,
-  loading: true,
   pendingAuthorize: null,
   setUser: (u) => set({ user: u }),
-  setLoading: (b) => set({ loading: b }),
-  setPendingAuthorize: (s) => set({ pendingAuthorize: s }),
   refreshSession: async () => {
     try {
       const res = await fetch("/api/auth/session");
       if (!res.ok) {
-        // API returned error (500 etc) - don't loop, just show login
-        set({ user: null, loading: false });
+        set({ user: null });
         return;
       }
-      const data = await res.json();
-      set({ user: data.loggedIn ? data.user : null, pendingAuthorize: data.pendingAuthorize || null, loading: false });
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        set({ user: data.loggedIn ? data.user : null, pendingAuthorize: data.pendingAuthorize || null });
+      } catch {
+        set({ user: null });
+      }
     } catch {
-      // Network error - don't loop, just show login
-      set({ user: null, loading: false });
+      set({ user: null });
     }
   },
 }));
