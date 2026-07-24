@@ -56,16 +56,20 @@ export function ConnectDashboard() {
 
   useEffect(() => {
     fetchApps();
-    fetch("/api/admin/settings").then(r => r.json()).then(d => setMinTrustLevel(d.settings?.minTrustLevel ?? 1)).catch(() => {});
+    // Only fetch settings if user is admin (non-admin gets 403)
+    if (user?.isAdmin) {
+      fetch("/api/admin/settings").then(r => r.json()).then(d => setMinTrustLevel(d.settings?.minTrustLevel ?? 1)).catch(() => {});
+    }
   }, []);
 
-  // Pending authorize redirect (came back from Discourse login into authorize flow)
+  // Pending authorize redirect - ONLY ONCE, then clear it
+  const [authorizeHandled, setAuthorizeHandled] = useState(false);
   useEffect(() => {
-    if (pendingAuthorize) {
-      // clear it then go
+    if (pendingAuthorize && !authorizeHandled) {
+      setAuthorizeHandled(true);
       window.location.href = pendingAuthorize;
     }
-  }, [pendingAuthorize]);
+  }, [pendingAuthorize, authorizeHandled]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
