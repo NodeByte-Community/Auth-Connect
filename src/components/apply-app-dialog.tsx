@@ -165,7 +165,7 @@ export function ApplyAppDialog({ open, onOpenChange, onCreated, trustLevel, minT
                   if (!displayUrl && callbackUrls) {
                     try {
                       const firstUrl = callbackUrls.split("\n")[0].trim();
-                      if (firstUrl) displayUrl = `https://www.google.com/s2/favicons?domain=${new URL(firstUrl).hostname}&sz=64`;
+                      if (firstUrl) displayUrl = `${new URL(firstUrl).origin}/favicon.ico`;
                     } catch {}
                   }
                   if (displayUrl) {

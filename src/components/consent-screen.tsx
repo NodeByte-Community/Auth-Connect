@@ -89,6 +89,9 @@ export function ConsentScreen() {
     openid: { icon: ShieldCheck, label: "OpenID 身份", desc: "获取您的唯一身份标识" },
     profile: { icon: User, label: "个人资料", desc: "用户名、显示名、头像、社区等级" },
     email: { icon: Mail, label: "邮箱地址", desc: "读取您的邮箱" },
+    read: { icon: User, label: "读取权限", desc: "读取您的基本信息（用户名、头像等）" },
+    write: { icon: User, label: "写入权限", desc: "以您的身份进行操作" },
+    admin: { icon: ShieldCheck, label: "管理权限", desc: "管理员级别访问" },
   };
 
   return (
@@ -112,8 +115,7 @@ export function ConsentScreen() {
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">该网站将获取以下权限：</p>
             {scopes.length === 0 && <p className="text-sm text-slate-400">无权限请求</p>}
             {scopes.map((s) => {
-              const info = scopeInfo[s];
-              if (!info) return null;
+              const info = scopeInfo[s] || { icon: User, label: s, desc: "获取相关访问权限" };
               const Icon = info.icon;
               return (
                 <div key={s} className="flex items-start gap-3 p-2 rounded-lg border bg-white">
@@ -166,7 +168,7 @@ function ConsentLogo({ siteLogo, icon, redirectUri }: { siteLogo?: string | null
     if (!triedFavicon) {
       try {
         const domain = new URL(redirectUri).hostname;
-        src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+        src = `${new URL(redirectUri).origin}/favicon.ico`;
       } catch {
         src = undefined;
       }

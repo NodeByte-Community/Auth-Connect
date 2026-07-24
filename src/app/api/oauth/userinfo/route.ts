@@ -6,6 +6,9 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/oauth/userinfo
  * OAuth2 / OIDC UserInfo endpoint. Requires Bearer access token.
+ *
+ * Always returns login, username, preferred_username, sub (even with minimal scope)
+ * to ensure compatibility with OIDC clients that require these fields.
  */
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization") || "";
@@ -27,19 +30,24 @@ export async function GET(req: NextRequest) {
   }
 
   const scopes = at.scopes.split(/\s+/);
-  const claims: any = { sub: u.externalId };
+
+  // ALWAYS include these fields regardless of scope
+  // Many OIDC clients (e.g., Gitea, Forgejo) require "login" field
+  const claims: any = {
+    sub: u.externalId,
+    login: u.username,
+    username: u.username,
+    preferred_username: u.username,
+    name: u.name || u.username,
+  };
 
   if (scopes.includes("profile") || scopes.includes("openid")) {
-    claims.name = u.name || u.username;
-    claims.preferred_username = u.username;
-    claims.login = u.username; // Some OIDC clients require "login" field
-    claims.username = u.username; // Some clients require "username" field
     claims.picture = u.avatarUrl;
     claims.trust_level = u.trustLevel;
     claims.is_admin = u.isAdmin;
     claims.is_moderator = u.isModerator;
   }
-  if (scopes.includes("email")) {
+  if (scopes.includes("email") || scopes.includes("openid")) {
     claims.email = u.email;
     claims.email_verified = true;
   }

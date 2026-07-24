@@ -192,7 +192,7 @@ function AppCard({ app, onClick }: { app: AppItem; onClick: () => void }) {
     : (() => {
         try {
           const firstCallback = app.callbackUrls.split("\n")[0].trim();
-          if (firstCallback) return `https://www.google.com/s2/favicons?domain=${new URL(firstCallback).hostname}&sz=64`;
+          if (firstCallback) return `${new URL(firstCallback).origin}/favicon.ico`;
         } catch {}
         return null;
       })();

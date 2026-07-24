@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
   if ((!autoIcon || !autoSiteLogo) && urls.length > 0) {
     try {
       const domain = new URL(urls[0]).hostname;
-      const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+      const faviconUrl = `${new URL(urls[0]).origin}/favicon.ico`;
       if (!autoIcon) autoIcon = faviconUrl;
       if (!autoSiteLogo) autoSiteLogo = faviconUrl;
     } catch {}
