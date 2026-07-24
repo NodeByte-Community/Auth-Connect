@@ -51,7 +51,7 @@ export async function sendDiscoursePM(
         title,
         raw,
         archetype: "private_message",
-        target_usernames: toUsername,
+        target_recipients: toUsername,
       }),
     });
     if (!res.ok) {
@@ -89,7 +89,8 @@ export async function fetchAllUserStatuses(): Promise<Map<string, {
       });
       if (!res.ok) break;
       const data = await res.json();
-      const users: any[] = data.users || [];
+      // Discourse API may return array directly or {users: [...]}
+      const users: any[] = Array.isArray(data) ? data : (data.users || []);
       if (users.length === 0) break;
       for (const u of users) {
         map.set(String(u.id), {
@@ -112,39 +113,37 @@ export async function fetchAllUserStatuses(): Promise<Map<string, {
 
   try {
     await fetchList("/admin/users/list/active.json");
-    await fetchList("/admin/users/list/suspended.json").then(async () => {
-      // mark suspended
-      let page = 1;
-      while (true) {
-        const res = await fetch(`${DISCOURSE_BASE_URL}/admin/users/list/suspended.json?page=${page}`, { headers: headers() });
-        if (!res.ok) break;
-        const data = await res.json();
-        const users: any[] = data.users || [];
-        if (users.length === 0) break;
-        for (const u of users) {
-          const existing = map.get(String(u.id));
-          if (existing) {
-            existing.suspended = true;
-            existing.suspendedTill = u.suspended_till || null;
-          } else {
-            map.set(String(u.id), {
-              externalId: String(u.id),
-              username: u.username,
-              trustLevel: u.trust_level ?? 0,
-              admin: !!u.admin,
-              moderator: !!u.moderator,
-              silenced: !!u.silenced,
-              suspended: true,
-              suspendedTill: u.suspended_till || null,
-              active: !!u.active,
-            });
-          }
+    // Fetch suspended users
+    let page = 1;
+    while (true) {
+      const res = await fetch(`${DISCOURSE_BASE_URL}/admin/users/list/suspended.json?page=${page}`, { headers: headers() });
+      if (!res.ok) break;
+      const data = await res.json();
+      const users: any[] = Array.isArray(data) ? data : (data.users || []);
+      if (users.length === 0) break;
+      for (const u of users) {
+        const existing = map.get(String(u.id));
+        if (existing) {
+          existing.suspended = true;
+          existing.suspendedTill = u.suspended_till || null;
+        } else {
+          map.set(String(u.id), {
+            externalId: String(u.id),
+            username: u.username,
+            trustLevel: u.trust_level ?? 0,
+            admin: !!u.admin,
+            moderator: !!u.moderator,
+            silenced: !!u.silenced,
+            suspended: true,
+            suspendedTill: u.suspended_till || null,
+            active: !!u.active,
+          });
         }
-        if (users.length < 100) break;
-        page++;
-        if (page > 50) break;
       }
-    });
+      if (users.length < 100) break;
+      page++;
+      if (page > 50) break;
+    }
   } catch (e) {
     console.error("[discourse] fetchAllUserStatuses error:", e);
   }
@@ -154,15 +153,31 @@ export async function fetchAllUserStatuses(): Promise<Map<string, {
 
 /**
  * Get a single user's detail by external_id (Discourse user id).
+ * Tries /users/by-external/{id}.json first, falls back to /admin/users/{id}.json
  */
 export async function getUserByExternalId(externalId: string): Promise<DiscourseUserDetail | null> {
   try {
-    const res = await fetch(`${DISCOURSE_BASE_URL}/users/by-external/${externalId}.json`, {
+    // Try by-external endpoint first
+    let res = await fetch(`${DISCOURSE_BASE_URL}/users/by-external/${externalId}.json`, {
       headers: headers(),
     });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.user || null;
+    if (res.ok) {
+      const data = await res.json();
+      if (data.user) return data.user;
+    }
+
+    // Fallback: use admin endpoint with user id
+    res = await fetch(`${DISCOURSE_BASE_URL}/admin/users/${externalId}.json`, {
+      headers: headers(),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      // admin endpoint returns user directly
+      return data.user || data;
+    }
+
+    // Last fallback: try /u/{username}.json if we can find username
+    return null;
   } catch {
     return null;
   }
