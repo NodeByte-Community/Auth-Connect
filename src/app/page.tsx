@@ -17,17 +17,20 @@ function HomeInner() {
   const [redirecting, setRedirecting] = useState(false);
   const fetchedRef = useRef(false);
 
+  // useSearchParams is safe inside Suspense boundary
   const view = sp.get("view");
   const isAdminRoute = sp.get("admin") === "1";
 
-  // Only fetch session ONCE on mount - never refetch to prevent infinite loop
+  // Only fetch session ONCE on mount
   useEffect(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
+    let active = true;
     (async () => {
       await refreshSession();
-      setBooted(true);
+      if (active) setBooted(true);
     })();
+    return () => { active = false; };
   }, []);
 
   const handleLogin = useCallback(() => {
@@ -46,7 +49,7 @@ function HomeInner() {
     );
   }
 
-  // Not logged in: show branded login page with single login button
+  // Not logged in
   if (!user) {
     return <LoginPage onLogin={handleLogin} redirecting={redirecting} />;
   }
@@ -55,11 +58,8 @@ function HomeInner() {
     return <ConsentScreen />;
   }
 
-  // Admin route: only accessible if user is admin
   if (isAdminRoute) {
-    if (user.isAdmin) {
-      return <AdminPanel />;
-    }
+    if (user.isAdmin) return <AdminPanel />;
     return <ConnectDashboard />;
   }
 
