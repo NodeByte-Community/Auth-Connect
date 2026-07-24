@@ -9,8 +9,7 @@ export const maxDuration = 60;
 
 /**
  * POST /api/admin/check-banned
- * Admin endpoint to manually trigger banned user check.
- * Same logic as /api/cron/check-banned but requires admin session.
+ * Admin endpoint to manually trigger banned user check + trust level sync.
  */
 export async function POST() {
   let session;
@@ -23,12 +22,15 @@ export async function POST() {
   const startedAt = Date.now();
   let checked = 0;
   let bannedCount = 0;
+  let unbannedCount = 0;
   let appsDisabled = 0;
   let sessionsKilled = 0;
+  let trustLevelUpdated = 0;
+  let adminUpdated = 0;
 
   try {
     const statusMap = await fetchAllUserStatuses();
-    const localUsers = await db.user.findMany({ select: { id: true, externalId: true, isBanned: true, isSuspended: true, trustLevel: true, isAdmin: true } });
+    const localUsers = await db.user.findMany({ select: { id: true, externalId: true, isBanned: true, isSuspended: true, trustLevel: true, isAdmin: true, isModerator: true } });
 
     for (const lu of localUsers) {
       checked++;
@@ -37,10 +39,12 @@ export async function POST() {
 
       const isBanned = remote.silenced || remote.suspended;
       const updates: any = {};
-      if (lu.trustLevel !== remote.trustLevel) updates.trustLevel = remote.trustLevel;
-      if (lu.isAdmin !== remote.admin) updates.isAdmin = remote.admin;
-      if (lu.isBanned !== isBanned) updates.isBanned = isBanned;
-      if (lu.isSuspended !== remote.suspended) updates.isSuspended = remote.suspended;
+
+      if (lu.trustLevel !== remote.trustLevel) { updates.trustLevel = remote.trustLevel; trustLevelUpdated++; }
+      if (lu.isAdmin !== remote.admin) { updates.isAdmin = remote.admin; adminUpdated++; }
+      if (lu.isModerator !== remote.moderator) { updates.isModerator = remote.moderator; }
+      if (lu.isBanned !== isBanned) { updates.isBanned = isBanned; }
+      if (lu.isSuspended !== remote.suspended) { updates.isSuspended = remote.suspended; }
 
       if (Object.keys(updates).length > 0) {
         await db.user.update({ where: { id: lu.id }, data: updates });
@@ -48,24 +52,22 @@ export async function POST() {
 
       if (isBanned && !lu.isBanned) {
         bannedCount++;
-        const r = await db.application.updateMany({
-          where: { ownerId: lu.id, status: { not: "disabled" } },
-          data: { status: "disabled" },
-        });
+        const r = await db.application.updateMany({ where: { ownerId: lu.id, status: { not: "disabled" } }, data: { status: "disabled" } });
         appsDisabled += r.count;
         const sk = await db.session.deleteMany({ where: { userId: lu.id } });
         sessionsKilled += sk.count;
         await logAction({ userId: lu.id, action: "AUTO_BAN_DISABLE", details: `manual trigger by ${session.user.username}, disabled ${r.count} apps` });
+      }
+
+      if (!isBanned && lu.isBanned) {
+        unbannedCount++;
       }
     }
 
     return NextResponse.json({
       ok: true,
       durationMs: Date.now() - startedAt,
-      checked,
-      bannedCount,
-      appsDisabled,
-      sessionsKilled,
+      checked, bannedCount, unbannedCount, appsDisabled, sessionsKilled, trustLevelUpdated, adminUpdated,
     });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e.message, durationMs: Date.now() - startedAt }, { status: 500 });

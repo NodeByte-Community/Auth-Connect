@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { ConnectDashboard } from "@/components/connect-dashboard";
@@ -35,7 +35,12 @@ function HomeInner() {
     return () => { mounted = false; };
   }, [refreshSession]);
 
-  // Loading state
+  const handleLogin = useCallback(() => {
+    setRedirecting(true);
+    const returnUrl = window.location.pathname + window.location.search;
+    window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnUrl)}`;
+  }, []);
+
   if (!booted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -44,12 +49,10 @@ function HomeInner() {
     );
   }
 
-  // Error state - show login page instead of infinite loop
   if (error) {
     return <LoginPage onLogin={() => window.location.reload()} redirecting={false} />;
   }
 
-  // Not logged in: show branded login page with single login button
   if (!user) {
     return <LoginPage onLogin={handleLogin} redirecting={redirecting} />;
   }
@@ -58,7 +61,6 @@ function HomeInner() {
     return <ConsentScreen />;
   }
 
-  // Admin route: only accessible if user is admin
   if (isAdminRoute) {
     if (user.isAdmin) {
       return <AdminPanel />;
@@ -67,26 +69,17 @@ function HomeInner() {
   }
 
   return <ConnectDashboard />;
-
-  function handleLogin() {
-    if (redirecting) return; // Guard against double-click
-    setRedirecting(true);
-    const returnUrl = window.location.pathname + window.location.search;
-    window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnUrl)}`;
-  }
 }
 
 function LoginPage({ onLogin, redirecting }: { onLogin: () => void; redirecting: boolean }) {
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-rose-50 via-amber-50 to-teal-50 flex items-center justify-center p-4">
-      {/* Decorative blobs */}
       <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-gradient-to-br from-rose-200/50 to-fuchsia-200/40 blur-3xl" />
       <div className="absolute -bottom-32 right-0 w-96 h-96 rounded-full bg-gradient-to-br from-teal-200/50 to-emerald-200/40 blur-3xl" />
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-gradient-to-br from-amber-200/40 to-orange-200/30 blur-3xl" />
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #000 1px, transparent 0)", backgroundSize: "24px 24px" }} />
 
       <Card className="relative max-w-md w-full p-10 shadow-2xl border-white/60 bg-white/80 backdrop-blur-sm">
-        {/* Brand */}
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-1.5 mb-3">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 via-fuchsia-500 to-teal-500 flex items-center justify-center shadow-lg">
@@ -105,7 +98,6 @@ function LoginPage({ onLogin, redirecting }: { onLogin: () => void; redirecting:
           <p className="text-sm text-slate-500 mt-4">基于 NodeByte SSO 的统一身份认证系统</p>
         </div>
 
-        {/* Features badges */}
         <div className="flex items-center justify-center gap-2 mb-8 flex-wrap">
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
             <ShieldCheck className="w-3 h-3" /> OIDC
@@ -118,7 +110,6 @@ function LoginPage({ onLogin, redirecting }: { onLogin: () => void; redirecting:
           </span>
         </div>
 
-        {/* Single login button */}
         <Button
           className="w-full h-12 text-base bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 shadow-lg"
           onClick={onLogin}
@@ -141,7 +132,6 @@ function LoginPage({ onLogin, redirecting }: { onLogin: () => void; redirecting:
         </p>
       </Card>
 
-      {/* Footer */}
       <div className="absolute bottom-4 left-0 right-0 text-center text-xs text-slate-400">
         © NodeByte Connect · 统一身份认证系统
       </div>
