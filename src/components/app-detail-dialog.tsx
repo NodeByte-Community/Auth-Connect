@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Copy, KeyRound, Trash2, Loader2, ShieldCheck, Pencil, RefreshCw, ExternalLink, AlertTriangle, CheckCircle2, Code, HeartPulse, Check, X, Activity } from "lucide-react";
 
@@ -387,7 +386,7 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
 
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1"><ExternalLink className="w-3.5 h-3.5" /> 完整调用地址</Label>
-                <ScrollArea className="h-40 rounded-lg border bg-slate-950 p-3">
+                <div className="h-40 rounded-lg border bg-slate-950 p-3 overflow-auto">
                   <pre className="text-xs text-emerald-400 font-mono whitespace-pre-wrap break-all">
 {Object.entries(credentials.endpoints).map(([k, v]) => `${k}:\n${v}`).join("\n\n")}
 
@@ -396,7 +395,7 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
 回调地址:
 {credentials.callbackUrls}
                   </pre>
-                  </ScrollArea>
+                  </div>
                 <Button size="sm" variant="outline" onClick={() => copy(JSON.stringify(credentials.endpoints, null, 2), "调用地址")} className="mt-1">
                   <Copy className="w-3.5 h-3.5 mr-1" /> 复制全部地址
                 </Button>
@@ -521,11 +520,11 @@ function CredentialField({ label, value, onCopy, masked }: { label: string; valu
     <div className="space-y-1">
       <Label>{label}</Label>
       <div className="flex items-center gap-2">
-        <ScrollArea className="flex-1 h-10 rounded-lg border bg-slate-950">
+        <div className="flex-1 h-10 rounded-lg border bg-slate-950 overflow-auto">
           <code className={`block px-3 py-2 text-xs font-mono ${masked && !show ? "text-slate-600" : "text-emerald-400"} break-all`}>
             {masked && !show ? "••••••••••••••••••••••••••••••••" : value}
           </code>
-        </ScrollArea>
+        </div>
         {masked && (
           <Button size="sm" variant="outline" onClick={() => setShow(!show)}>{show ? "隐藏" : "显示"}</Button>
         )}
@@ -642,11 +641,11 @@ if (code) {
           ))}
         </div>
       </div>
-      <ScrollArea className="h-52 rounded-lg border bg-slate-950 p-3">
+      <div className="h-52 rounded-lg border bg-slate-950 p-3 overflow-auto">
         <pre className="text-[11px] text-slate-300 font-mono whitespace-pre-wrap break-all leading-relaxed">
 {examples[lang]}
         </pre>
-      </ScrollArea>
+      </div>
       <Button size="sm" variant="outline" onClick={() => onCopy(examples[lang], `${lang} 代码`)}>
         <Copy className="w-3.5 h-3.5 mr-1" /> 复制 {lang === "javascript" ? "JS" : lang === "python" ? "Python" : lang === "html" ? "HTML" : "cURL"} 代码
       </Button>

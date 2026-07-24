@@ -3,7 +3,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SessionUser } from "@/lib/store";
 import { Crown, Star, Zap, Shield, Mail, Hash, User as UserIcon, Calendar, KeyRound, Lock } from "lucide-react";
 
