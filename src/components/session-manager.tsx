@@ -95,7 +95,7 @@ export function SessionManager({ open, onOpenChange }: Props) {
           此处显示您当前所有活跃的登录会话。如发现可疑会话请立即注销。会话在浏览器关闭后自动失效。
         </div>
 
-        <ScrollArea className="max-h-[50vh] pr-2">
+        <div className="max-h-[50vh] pr-2 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
           ) : sessions.length === 0 ? (
@@ -127,7 +127,7 @@ export function SessionManager({ open, onOpenChange }: Props) {
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="border-t pt-3">
           <Button variant="outline" onClick={() => onOpenChange(false)}>关闭</Button>

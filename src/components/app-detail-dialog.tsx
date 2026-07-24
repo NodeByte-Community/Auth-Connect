@@ -220,7 +220,7 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-2 max-h-[60vh]">
+        <div className="flex-1 pr-2 max-h-[60vh] overflow-y-auto overflow-x-hidden">
           {view === "detail" && (
             <div className="space-y-4">
               {app.status === "rejected" && app.rejectReason && (
@@ -455,7 +455,7 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
               </div>
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="border-t pt-3">
           {view === "edit" ? (

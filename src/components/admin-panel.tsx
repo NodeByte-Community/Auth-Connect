@@ -268,7 +268,7 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
             <h3 className="font-bold text-slate-800 flex items-center gap-2"><Clock className="w-4 h-4 text-teal-600" />最近活动</h3>
             <Button size="sm" variant="ghost" className="text-xs text-slate-500" onClick={() => onNavigate("logs")}>查看全部 →</Button>
           </div>
-          <ScrollArea className="h-64">
+          <div className="h-64 overflow-y-auto">
             <div className="space-y-2">
               {stats.recentLogs.length === 0 ? (
                 <p className="text-sm text-slate-400 text-center py-4">暂无活动</p>
@@ -288,7 +288,7 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
                 ))
               )}
             </div>
-          </ScrollArea>
+          </div>
         </Card>
 
         <Card className="p-5">
@@ -1077,7 +1077,7 @@ function UserDetailContent({ data, onDisableApp, fmtDate }: { data: any; onDisab
   const { user, apps, recentLogs, statusCounts } = data;
   const trustLevelNames = ["新用户", "基本用户", "成员", "活跃用户", "领导者"];
   return (
-    <ScrollArea className="flex-1 pr-2">
+    <div className="flex-1 pr-2 overflow-y-auto">
       <div className="space-y-4">
         {/* User info header */}
         <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-fuchsia-50 to-purple-50 border">
@@ -1175,7 +1175,7 @@ function UserDetailContent({ data, onDisableApp, fmtDate }: { data: any; onDisab
           </div>
         )}
       </div>
-    </ScrollArea>
+    </div>
   );
 }
 

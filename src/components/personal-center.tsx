@@ -32,7 +32,7 @@ export function PersonalCenter({ open, onOpenChange, user }: Props) {
             个人中心
           </DialogTitle>
         </DialogHeader>
-        <ScrollArea className="max-h-[70vh] pr-4">
+        <div className="max-h-[70vh] pr-4 overflow-y-auto">
           <div className="space-y-4">
             {/* Profile header */}
             <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-teal-50 to-amber-50 border">
@@ -90,7 +90,7 @@ export function PersonalCenter({ open, onOpenChange, user }: Props) {
               会话在浏览器关闭后失效，需重新登录。
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
