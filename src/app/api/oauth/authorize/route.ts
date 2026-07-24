@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { generateAuthCode } from "@/lib/sso";
 import { logAction } from "@/lib/logs";
-import { getBaseUrl, validateRedirectUriDomain } from "@/lib/url";
+import { getBaseUrl } from "@/lib/url";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +13,12 @@ export const dynamic = "force-dynamic";
  *
  * Params: response_type=code, client_id, redirect_uri, scope, state, nonce
  *
- * redirect_uri 校验规则:
- *   只检查协议+域名+端口是否匹配预注册的回调地址。
- *   不检查路径后缀（/callback, /api/auth 等），同域名任意路径均允许。
- *   不同域名直接拒绝并报错。
+ * Logic:
+ *  - Validate client + redirect_uri
+ *  - If not logged in -> redirect to /api/auth/login?return_to=<this full URL>
+ *      (solves the "callback landed on system home" problem)
+ *  - If logged in -> redirect to /?view=authorize&... so frontend shows consent
+ *  - User consents via POST -> issues auth code
  */
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
@@ -42,14 +44,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "access_denied", error_description: "应用未通过审核或已停用" }, { status: 403 });
   }
 
-  // 校验 redirect_uri 域名（不检查路径后缀）
-  const allowedUrls = app.callbackUrls.split("\n").map((s) => s.trim()).filter(Boolean);
-  const domainCheck = validateRedirectUriDomain(redirect_uri, allowedUrls);
-  if (!domainCheck.ok) {
-    return NextResponse.json(
-      { error: "invalid_redirect_uri", error_description: domainCheck.error },
-      { status: 400 }
-    );
+  // Validate redirect_uri against registered (one per line)
+  const allowed = app.callbackUrls.split("\n").map((s) => s.trim()).filter(Boolean);
+  if (!allowed.includes(redirect_uri)) {
+    return NextResponse.json({ error: "invalid_redirect_uri" }, { status: 400 });
   }
 
   // Check login
@@ -76,8 +74,6 @@ export async function GET(req: NextRequest) {
 /**
  * POST /api/oauth/authorize
  * User has consented (or denied). Body: { client_id, redirect_uri, scope, state, nonce, action: "approve"|"deny" }
- *
- * redirect_uri 二次校验：防止用户篡改前端数据。
  */
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -90,14 +86,9 @@ export async function POST(req: NextRequest) {
   if (!app) return NextResponse.json({ error: "invalid_client" }, { status: 400 });
   if (app.status !== "approved") return NextResponse.json({ error: "access_denied" }, { status: 403 });
 
-  // 二次校验 redirect_uri 域名（后端不信任前端）
-  const allowedUrls = app.callbackUrls.split("\n").map((s) => s.trim()).filter(Boolean);
-  const domainCheck = validateRedirectUriDomain(redirect_uri, allowedUrls);
-  if (!domainCheck.ok) {
-    return NextResponse.json(
-      { error: "invalid_redirect_uri", error_description: domainCheck.error },
-      { status: 400 }
-    );
+  const allowed = app.callbackUrls.split("\n").map((s) => s.trim()).filter(Boolean);
+  if (!allowed.includes(redirect_uri)) {
+    return NextResponse.json({ error: "invalid_redirect_uri" }, { status: 400 });
   }
 
   if (action === "deny") {
