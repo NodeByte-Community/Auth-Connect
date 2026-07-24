@@ -17,14 +17,12 @@ export interface SessionUser {
 
 interface AppState {
   user: SessionUser | null;
-  pendingAuthorize: string | null;
   setUser: (u: SessionUser | null) => void;
   refreshSession: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set) => ({
   user: null,
-  pendingAuthorize: null,
   setUser: (u) => set({ user: u }),
   refreshSession: async () => {
     try {
@@ -36,7 +34,7 @@ export const useAppStore = create<AppState>((set) => ({
       const text = await res.text();
       try {
         const data = JSON.parse(text);
-        set({ user: data.loggedIn ? data.user : null, pendingAuthorize: data.pendingAuthorize || null });
+        set({ user: data.loggedIn ? data.user : null });
       } catch {
         set({ user: null });
       }

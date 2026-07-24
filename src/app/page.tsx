@@ -19,11 +19,7 @@ function HomeInner() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        await refreshSession();
-      } catch {
-        // ignore - store handles errors internally
-      }
+      try { await refreshSession(); } catch {}
       if (!cancelled) setReady(true);
     })();
     return () => { cancelled = true; };

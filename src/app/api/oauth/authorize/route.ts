@@ -53,9 +53,11 @@ export async function GET(req: NextRequest) {
   // Check login
   const session = await getSession();
   if (!session) {
+    // Redirect to login with return_to pointing back to this authorize URL
     const baseUrl = getBaseUrl(req);
+    const authorizeUrl = req.nextUrl.pathname + req.nextUrl.search;
     const loginUrl = new URL("/api/auth/login", baseUrl);
-    loginUrl.searchParams.set("return_to", req.nextUrl.pathname + req.nextUrl.search);
+    loginUrl.searchParams.set("return_to", authorizeUrl);
     return NextResponse.redirect(loginUrl);
   }
 

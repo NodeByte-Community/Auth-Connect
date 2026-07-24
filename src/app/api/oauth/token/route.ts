@@ -112,6 +112,8 @@ export async function POST(req: NextRequest) {
         aud: app.appId,
         name: user.name || user.username,
         preferred_username: user.username,
+        login: user.username, // Required by some OIDC clients
+        username: user.username, // Required by some OIDC clients
         email: user.email,
         email_verified: true,
         picture: user.avatarUrl,

@@ -24,6 +24,8 @@ export async function GET() {
       "sub",
       "name",
       "preferred_username",
+      "login",
+      "username",
       "email",
       "email_verified",
       "picture",

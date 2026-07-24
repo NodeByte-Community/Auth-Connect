@@ -31,7 +31,7 @@ interface AppItem {
 
 export function ConnectDashboard() {
   const router = useRouter();
-  const { user, pendingAuthorize } = useAppStore();
+  const { user } = useAppStore();
   const [pcOpen, setPcOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
@@ -56,20 +56,10 @@ export function ConnectDashboard() {
 
   useEffect(() => {
     fetchApps();
-    // Only fetch settings if user is admin (non-admin gets 403)
     if (user?.isAdmin) {
       fetch("/api/admin/settings").then(r => r.json()).then(d => setMinTrustLevel(d.settings?.minTrustLevel ?? 1)).catch(() => {});
     }
   }, []);
-
-  // Pending authorize redirect - ONLY ONCE, then clear it
-  const [authorizeHandled, setAuthorizeHandled] = useState(false);
-  useEffect(() => {
-    if (pendingAuthorize && !authorizeHandled) {
-      setAuthorizeHandled(true);
-      window.location.href = pendingAuthorize;
-    }
-  }, [pendingAuthorize, authorizeHandled]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });

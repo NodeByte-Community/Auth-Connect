@@ -32,6 +32,8 @@ export async function GET(req: NextRequest) {
   if (scopes.includes("profile") || scopes.includes("openid")) {
     claims.name = u.name || u.username;
     claims.preferred_username = u.username;
+    claims.login = u.username; // Some OIDC clients require "login" field
+    claims.username = u.username; // Some clients require "username" field
     claims.picture = u.avatarUrl;
     claims.trust_level = u.trustLevel;
     claims.is_admin = u.isAdmin;

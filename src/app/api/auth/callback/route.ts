@@ -97,7 +97,10 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const sessionToken = await createSession(user.id, returnTo || undefined);
+  // Only store pendingAuthorize if it's an OAuth authorize URL (not plain "/")
+  // This prevents infinite redirect loop when returnTo is just "/"
+  const pendingAuthorize = (returnTo && returnTo.startsWith("/api/oauth/authorize")) ? returnTo : undefined;
+  const sessionToken = await createSession(user.id, pendingAuthorize);
   await logAction({ userId: user.id, action: "LOGIN", ip: req.headers.get("x-forwarded-for") || undefined });
 
   // Fix: Use BASE_URL from env instead of req.nextUrl.origin (which returns 0.0.0.0)
