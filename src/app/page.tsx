@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense, useCallback } from "react";
+import { useEffect, useState, Suspense, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { ConnectDashboard } from "@/components/connect-dashboard";
@@ -15,32 +15,29 @@ function HomeInner() {
   const { user, loading, refreshSession } = useAppStore();
   const [booted, setBooted] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const [error, setError] = useState(false);
+  const fetchedRef = useRef(false);
 
   const view = sp.get("view");
   const isAdminRoute = sp.get("admin") === "1";
 
+  // Only fetch session ONCE on mount - never refetch to prevent infinite loop
   useEffect(() => {
-    let mounted = true;
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
     (async () => {
-      try {
-        await refreshSession();
-      } catch (e) {
-        console.error("Session refresh failed:", e);
-        if (mounted) setError(true);
-      } finally {
-        if (mounted) setBooted(true);
-      }
+      await refreshSession();
+      setBooted(true);
     })();
-    return () => { mounted = false; };
-  }, [refreshSession]);
+  }, []);
 
   const handleLogin = useCallback(() => {
+    if (redirecting) return;
     setRedirecting(true);
     const returnUrl = window.location.pathname + window.location.search;
     window.location.href = `/api/auth/login?return_to=${encodeURIComponent(returnUrl)}`;
-  }, []);
+  }, [redirecting]);
 
+  // Loading state
   if (!booted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -49,10 +46,7 @@ function HomeInner() {
     );
   }
 
-  if (error) {
-    return <LoginPage onLogin={() => window.location.reload()} redirecting={false} />;
-  }
-
+  // Not logged in: show branded login page with single login button
   if (!user) {
     return <LoginPage onLogin={handleLogin} redirecting={redirecting} />;
   }
@@ -61,6 +55,7 @@ function HomeInner() {
     return <ConsentScreen />;
   }
 
+  // Admin route: only accessible if user is admin
   if (isAdminRoute) {
     if (user.isAdmin) {
       return <AdminPanel />;

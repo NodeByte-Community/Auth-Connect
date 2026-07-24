@@ -25,7 +25,7 @@ interface AppState {
   refreshSession: () => Promise<void>;
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set) => ({
   user: null,
   loading: true,
   pendingAuthorize: null,
@@ -35,10 +35,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   refreshSession: async () => {
     try {
       const res = await fetch("/api/auth/session");
+      if (!res.ok) {
+        // API returned error (500 etc) - don't loop, just show login
+        set({ user: null, loading: false });
+        return;
+      }
       const data = await res.json();
       set({ user: data.loggedIn ? data.user : null, pendingAuthorize: data.pendingAuthorize || null, loading: false });
     } catch {
-      set({ loading: false });
+      // Network error - don't loop, just show login
+      set({ user: null, loading: false });
     }
   },
 }));
