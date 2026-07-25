@@ -99,15 +99,27 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
   }
 
+  // Auto-detect favicon from callback URL if icon/siteLogo cleared
+  let finalIcon = icon !== undefined ? (icon ? String(icon).slice(0, 2048) : null) : undefined;
+  let finalSiteLogo = siteLogo !== undefined ? (siteLogo ? String(siteLogo).slice(0, 2048) : null) : undefined;
+  const effectiveUrls = urls || app.callbackUrls.split("\n").map((s: string) => s.trim()).filter(Boolean);
+  if ((!finalIcon || !finalSiteLogo) && effectiveUrls.length > 0) {
+    try {
+      const faviconUrl = `${new URL(effectiveUrls[0]).origin}/favicon.ico`;
+      if (finalIcon === null) finalIcon = faviconUrl;
+      if (finalSiteLogo === null) finalSiteLogo = faviconUrl;
+    } catch {}
+  }
+
   const updated = await db.application.update({
     where: { id },
     data: {
       name: name !== undefined ? String(name).slice(0, 100) : undefined,
-      icon: icon !== undefined ? (icon ? String(icon).slice(0, 2048) : null) : undefined,
+      icon: finalIcon,
       description: description !== undefined ? String(description).slice(0, 2000) : undefined,
       type: type || undefined,
       callbackUrls: urls ? urls.join("\n") : undefined,
-      siteLogo: siteLogo !== undefined ? (siteLogo ? String(siteLogo).slice(0, 2048) : null) : undefined,
+      siteLogo: finalSiteLogo,
       status: "pending_re_review",
       rejectReason: null,
     },

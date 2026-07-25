@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { ConnectBanner } from "@/components/connect-banner";
@@ -196,6 +196,13 @@ function AppCard({ app, onClick }: { app: AppItem; onClick: () => void }) {
         } catch {}
         return null;
       })();
+
+  // Reset imgError when icon URL changes (after edit)
+  const iconKey = app.icon || app.callbackUrls;
+  useEffect(() => {
+    const t = setTimeout(() => setImgError(false), 0);
+    return () => clearTimeout(t);
+  }, [iconKey]);
 
   return (
     <Card className={`p-4 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden border-l-0`} onClick={onClick}>

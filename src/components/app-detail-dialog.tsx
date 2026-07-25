@@ -157,6 +157,16 @@ export function AppDetailDialog({ app, open, onOpenChange, onUpdated, onDeleted 
     }
   };
 
+  // Auto-detect favicon from callback URL for edit preview
+  const editIconPreview = (() => {
+    if (editIcon) return editIcon;
+    try {
+      const firstUrl = editCallbackUrls.split("\n")[0].trim();
+      if (firstUrl) return `${new URL(firstUrl).origin}/favicon.ico`;
+    } catch {}
+    return null;
+  })();
+
   const handleDelete = async () => {
     try {
       const res = await fetch(`/api/apps/${app.id}`, { method: "DELETE" });
