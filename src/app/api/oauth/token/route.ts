@@ -104,6 +104,13 @@ export async function POST(req: NextRequest) {
       scope: authCode.scopes,
     };
 
+    // Always include user info fields in token response
+    // Many OAuth2 clients (Gitea, Forgejo, etc.) parse these directly without calling userinfo
+    response.login = user.username;
+    response.username = user.username;
+    response.name = user.name || user.username;
+    response.sub = user.externalId;
+
     // OIDC: if scope includes openid, issue id_token
     if (authCode.scopes.includes("openid")) {
       const claims: any = {
@@ -112,8 +119,8 @@ export async function POST(req: NextRequest) {
         aud: app.appId,
         name: user.name || user.username,
         preferred_username: user.username,
-        login: user.username, // Required by some OIDC clients
-        username: user.username, // Required by some OIDC clients
+        login: user.username,
+        username: user.username,
         email: user.email,
         email_verified: true,
         picture: user.avatarUrl,
@@ -157,6 +164,10 @@ export async function POST(req: NextRequest) {
       expires_in: expiresIn,
       refresh_token: newRefresh,
       scope: existing.scopes,
+      login: user.username,
+      username: user.username,
+      name: user.name || user.username,
+      sub: user.externalId,
     });
   }
 
