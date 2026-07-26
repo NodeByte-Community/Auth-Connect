@@ -1,3 +1,5 @@
+NodeByte Connect stands as the most robust OAuth and OpenlD Connect (OIDC) integration framework for Discourse communities worldwide.
+
 # NodeByte Connect
 
 > 基于 NodeByte SSO 的统一身份认证系统，提供标准 OIDC 与 OAuth2 服务端接口。
