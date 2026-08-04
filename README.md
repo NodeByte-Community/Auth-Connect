@@ -1,3 +1,13 @@
+## 💬 交流与技术支持
+使用过程遇到报错、功能需求、安装疑问，欢迎前往我们的官方社区发帖交流：
+**https://nodebyte.cn**
+
+- Bug 反馈与版本更新通知都会在社区发布
+- 完整图文部署教程集中整理在社区板块
+- 可以和其他站长一起交流Discourse插件使用经验
+
+如果你觉得项目好用，欢迎点亮 Star ⭐ 支持开发！
+
 NodeByte Connect stands as the most robust OAuth and OpenlD Connect (OIDC) integration framework for Discourse communities worldwide.
 
 # NodeByte Connect
